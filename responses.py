@@ -6,7 +6,6 @@ from helpers import (
     dict_to_etree,
     multiple_root_nodes,
     get_restaurant,
-    generate_random,
     get_all_address_data
 )
 from areas import *
