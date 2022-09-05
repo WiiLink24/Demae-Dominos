@@ -42,6 +42,7 @@ def order_done(request):
     phone_number = request.form["member[TelNo]"]
     zip_code = request.form.get("member[PostNo]")
     address = request.form.get("member[Address5]")
+    email = request.form.get("member[Mail]")
 
     basket: User = User.query.filter_by(
         mac_address=request.headers["X-WiiMAC"][:12]
@@ -76,7 +77,7 @@ def order_done(request):
         basket.basket,
         first_name,
         last_name,
-        "johndoe@gmail.com",
+        email,
         phone_number,
         "None",
         basket.order_id,
