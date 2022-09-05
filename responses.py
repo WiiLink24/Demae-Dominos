@@ -6,7 +6,7 @@ from helpers import (
     dict_to_etree,
     multiple_root_nodes,
     get_restaurant,
-    get_all_address_data
+    get_all_address_data,
 )
 from areas import *
 import json
@@ -40,6 +40,8 @@ def order_done(request):
     first_name = request.form["member[Name1]"]
     last_name = request.form["member[Name2]"]
     phone_number = request.form["member[TelNo]"]
+    zip_code = request.form.get("member[PostNo]")
+    address = request.form.get("member[Address5]")
 
     basket: User = User.query.filter_by(
         mac_address=request.headers["X-WiiMAC"][:12]
@@ -50,24 +52,36 @@ def order_done(request):
     street = ""
     street_number = ""
 
-    #geocoder = GoogleV3(api_key="")
-    #location = geocoder.geocode(request.form.get("member[Address5]"))
+    location = get_all_address_data(address, zip_code)
 
-    #for data in location.raw["address_components"]:
-    #    if data["types"] == ["street_number"]:
-     #       street_number = data["long_name"]
-      #  elif data["types"] == ["route"]:
-       #     street = data["long_name"]
-        #elif data["types"] == ["locality", "political"]:
-         #   city = data["long_name"]
-        #elif data["types"] == ["administrative_area_level_1", "political"]:
-         #   state = data["long_name"]
+    for data in location.raw["address_components"]:
+        if data["types"] == ["street_number"]:
+            street_number = data["long_name"]
+        elif data["types"] == ["route"]:
+            street = data["long_name"]
+        elif data["types"] == ["locality", "political"]:
+            city = data["long_name"]
+        elif data["types"] == ["administrative_area_level_1", "political"]:
+            state = data["short_name"]
 
-    # data = domino.place_order("address", "city", "state", "zip", "House", "street",
-    #     "num", shop_code, basket.basket, "name", "last name", "email",
-    #      "phone number", "None", basket.order_id, basket.price)
-
-    #    print(json.dumps(data))
+    data = domino.place_order(
+        address,
+        city,
+        state,
+        zip_code,
+        "House",
+        street,
+        street_number,
+        shop_code,
+        basket.basket,
+        first_name,
+        last_name,
+        "johndoe@gmail.com",
+        phone_number,
+        "None",
+        basket.order_id,
+        basket.price,
+    )
 
     basket.basket = []
     db.session.commit()
@@ -103,11 +117,6 @@ def basket_delete(request):
     basket.basket = idk
     db.session.commit()
 
-    return {}
-
-
-@multiple_root_nodes()
-def inquiry_done(_):
     return {}
 
 
@@ -157,7 +166,7 @@ def basket_list(request):
         elif data["types"] == ["locality", "political"]:
             city = data["long_name"]
         elif data["types"] == ["administrative_area_level_1", "political"]:
-            state = data["long_name"]
+            state = data["short_name"]
 
     x = json.loads(
         domino.get_price(
@@ -172,6 +181,7 @@ def basket_list(request):
             queried_data.basket,
         )
     )
+    print(x)
 
     cart["basketPrice"] = str(x["Order"]["Amounts"]["Menu"])
     cart["chargePrice"] = str(x["Order"]["Amounts"]["Tax"])
