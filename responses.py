@@ -93,7 +93,7 @@ def order_done(request):
 
     return {
         "Message": {"contents": "Thank you! Your order has been placed."},
-        "order_id": 17,
+        "order_id": json.loads(data)["Order"]["OrderID"],
         "orderDay": current_time,
         "hashKey": "Testing: 1, 2, 3",
         "hour": current_time,
