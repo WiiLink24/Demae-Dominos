@@ -83,6 +83,8 @@ def order_done(request):
         basket.order_id,
         basket.price,
     )
+    
+    print(data)
 
     basket.basket = []
     db.session.commit()
