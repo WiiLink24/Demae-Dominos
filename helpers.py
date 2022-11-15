@@ -6,6 +6,7 @@ from flask import Request
 from geopy.geocoders import GoogleV3
 from lxml import etree
 from dominos.domino import get_store_info, address_lookup
+from eatstreet.eatstreet import get_store_info_eatstreet, address_lookup_eatstreet
 from models import User
 from config import google_api_key
 
@@ -241,7 +242,7 @@ class Yomi:
         self.contents = contents
 
 
-def get_restaurant(request: Request, area_code):
+def get_restaurant(request: Request, area_code, category):
     """This function grabs basic restaurant information recursively, so we can have
     multiple restaurants without having to insert it manually in responses.py"""
     # All category names and values: https://gist.github.com/SketchMaster2001/42172c8b00075b4b827fa2f78a9eb9e1
@@ -254,20 +255,25 @@ def get_restaurant(request: Request, area_code):
     if not address_data:
         return []
 
-    x = json.loads(address_lookup(postal, address))
+    x = json.loads(address_lookup_eatstreet(postal, address, category))
     results = []
 
+    it = False
+
     for restaurant in x["restaurants"]:
+        it = True
         # Items must be indexed by 1.
-        info = get_store_info(restaurant["id"])
+        info = get_store_info_eatstreet(restaurant["id"])
+
+        print(info)
 
         results.append(
             RepeatedElement(
                 {
                     "shopCode": restaurant["id"],
                     "homeCode": 1,
-                    "name": "Dominos Pizza",
-                    "catchphrase": restaurant["address"],
+                    "name": info["name"],
+                    "catchphrase": info["address"],
                     "minPrice": info["min_price"],
                     "yoyaku": 1,
                     "activate": "on",
@@ -282,7 +288,26 @@ def get_restaurant(request: Request, area_code):
             )
         )
 
+    if not it:
+        results.append(
+            RepeatedElement(
+                {
+                    "shopCode": 123,
+                    "homeCode": 1,
+                    "name": "abc",
+                    "catchphrase": "abc",
+                    "minPrice": 1,
+                    "yoyaku": 1,
+                    "activate": "on",
+                    "waitTime": 1,
+                    "paymentList": {"athing": "Fox Card"},
+                    "shopStatus": {
+                        "status": {
+                            "isOpen": True,
+                        }
+                    },
+                }
+            )
+        )
+
     return results
-
-
-

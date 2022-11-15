@@ -29,6 +29,7 @@ from dominos.country import country, store_country
 
 @app.route("/nwapi.php", methods=["GET"])
 def base_api():
+    db.create_all()
     request_dump(request)
     try:
         # These values should be consistent for both v1 and v512.
@@ -98,7 +99,7 @@ def serve_item_image(_, filename):
 
 if __name__ == "__main__":
     WSGIRequestHandler.protocol_version = "HTTP/1.1"
-    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    """context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
     context.set_ciphers("ALL:@SECLEVEL=0")
-    context.load_cert_chain("server.pem", "server.key")
-    app.run(host="::", port=443, debug=True, ssl_context=context)
+    context.load_cert_chain("server.pem", "server.key")"""
+    app.run(host="::", port=80, debug=True, ssl_context=None)

@@ -2,13 +2,9 @@ import requests
 import json
 import datetime
 
-from dominos.country import country, Country
+from eatstreet.country import country, Country
 
-
-api_urls = {
-    Country.USA: "https://order.dominos.com",
-    Country.CANADA: "https://order.dominos.ca",
-}
+eatstreet_api_url = "https://eatstreet.com/api/v2"
 
 image_urls = {
     Country.USA: "https://cache.dominos.com/olo/6_92_1/assets/build/market/US/_en/images/img/products/larges",
@@ -16,59 +12,97 @@ image_urls = {
 }
 
 
-def get_store_info(store_id):
+def get_store_info_eatstreet(store_id):
     jsondata = {}
 
     response = requests.get(
-        f"{api_urls[country]}/power/store/{store_id}/profile",
+        f"{eatstreet_api_url}/restaurant-cards/nearby?latitude=30.40049&longitude=-97.70703",
         verify=True,
         headers=get_headers(),
     )
 
     s1 = response.json()
-    wait_time = s1["ServiceMethodEstimatedWaitMinutes"]["Delivery"]["Max"]
-    min_price = s1["MinimumDeliveryOrderAmount"]
-    address = s1["AddressDescription"]
-    detailed_wait = s1["EstimatedWaitMinutes"]
-    phone = s1["Phone"]
-    is_open = s1["IsOpen"]
-    service_hours = s1["ServiceHours"]["Delivery"][convert_datetime_today_to_date()]
 
-    # Some Dominos stores may close the next day, specifically on weekends. We will only handle ordering from the
-    # current day.
-    if len(service_hours) == 2:
-        service_hours = service_hours[1]
-    else:
-        service_hours = service_hours[0]
+    for store in s1["cards"]:
+        if str(store["id"]) == str(store_id):
+            store_id = store["id"]
+            response = requests.get(
+                f"{eatstreet_api_url}/restaurants/{store_id}",
+                verify=True,
+                headers=get_headers(),
+            )
+            s2 = response.json()
 
-    jsondata.update(
-        {
-            "wait_time": wait_time,
-            "min_price": min_price,
-            "address": address,
-            "detailed_wait": detailed_wait,
-            "phone": phone,
-            "is_open": is_open,
-            "service_hours": service_hours,
-        }
-    )
-    return jsondata
+            wait_time = store["maxDeliveryEta"]
+            min_price = store["pickupMin"]
+            address = s2["fullAddress"]
+            detailed_wait = int((store["minDeliveryEta"] + store["maxDeliveryEta"]) / 2)
+            phone = "911"
+            is_open = True
+            service_hours = {}
+            service_hours["OpenTime"] = "0"
+            service_hours["CloseTime"] = "0"
+            name = store["name"]
+
+            jsondata.update(
+                {
+                    "wait_time": wait_time,
+                    "min_price": min_price,
+                    "address": address,
+                    "detailed_wait": detailed_wait,
+                    "phone": phone,
+                    "is_open": is_open,
+                    "service_hours": service_hours,
+                    "name": name,
+                }
+            )
+            return jsondata
 
 
-def address_lookup(zipcode, address):
+def lookup_category(categories, category):
+    cat = {}
+
+    cat["American Food"] = 6
+    cat["Burgers"] = 7
+    cat["Catering"] = 9
+    cat["Chinese Food"] = 5
+    cat["Coffee & Tea"] = 10
+    cat["Dessert"] = 10
+    cat["Fast Food"] = 7
+    cat["Indian Food"] = 8
+    cat["Pizza"] = 1
+    cat["Smoothies & Juices"] = 10
+    cat["Subs & Sandwiches"] = 7
+
+    for k, v in cat.items():
+        if k in categories:
+            return v
+
+
+def address_lookup_eatstreet(zipcode, address, category):
     jsondata = {"user": {}, "restaurants": []}
     response = requests.get(
-        f"{api_urls[country]}/power/store-locator?type=Delivery&c={zipcode}&s={address}",
-        verify=True,
+        f"{eatstreet_api_url}/restaurant-cards/nearby?latitude=30.40049&longitude=-97.70703",
         headers=get_headers(),
     )
-    streetnum = s1["Address"]["StreetNumber"]
-    streetname = s1["Address"]["StreetName"]
-    city = s1["Address"]["City"]
-    region = s1["Address"]["Region"]
-    postal = s1["Address"]["PostalCode"]
+    s1 = response.json()
 
     count = 0
+
+    street = "hoge"
+    streetnum = "hoge"
+    streetname = "hoge"
+    city = "hoge"
+    region = "hoge"
+    postal = "hoge"
+
+    """street = s2["address"]
+    streetnum = s2["address"]  # change me
+    streetname = s2["address"]
+    city = s2["city"]
+    region = s2["state"]
+    postal = s2["zip"]"""
+
     jsondata["user"].update(
         {
             "street": street,
@@ -80,33 +114,46 @@ def address_lookup(zipcode, address):
             "streetnumber": streetnum,
         }
     )
-    for store in s1["Stores"]:
-        count = count + 1
-        if count <= 5:
-            if not store["IsOpen"]:
-                jsondata["restaurants"].append(
-                    {
-                        "id": store["StoreID"],
-                        "address": store["AddressDescription"].replace("\n", " "),
-                        "time": store["ServiceHoursDescription"]["Delivery"].replace(
-                            "\n", " "
-                        ),
-                        "isOpen": False,
-                        "isDelivery": store["IsDeliveryStore"],
-                    }
-                )
-            else:
-                jsondata["restaurants"].append(
-                    {
-                        "id": store["StoreID"],
-                        "address": store["AddressDescription"].replace("\n", " "),
-                        "time": store["ServiceHoursDescription"]["Delivery"].replace(
-                            "\n", " "
-                        ),
-                        "isOpen": True,
-                        "isDelivery": store["IsDeliveryStore"],
-                    }
-                )
+
+    for store in s1["cards"]:
+        if lookup_category(store["cuisines"], int(category)) == int(category):
+            store_id = store["id"]
+            response = requests.get(
+                f"{eatstreet_api_url}/restaurants/{store_id}",
+                verify=True,
+                headers=get_headers(),
+            )
+            s2 = response.json()
+
+            count = count + 1
+            print(count)
+            if count == 1:
+                if 1 + 1 == 2:
+                    """if (
+                        not store["orderingAvailability"]["delivery"] == "OPEN_NOW"
+                        and store["futureOrdering"]
+                    ):"""
+                    if 1 + 1 == 3:
+                        jsondata["restaurants"].append(
+                            {
+                                "id": store_id,
+                                "address": street,
+                                "time": store["minDeliveryEta"],
+                                "isOpen": False,
+                                "isDelivery": store["IsDeliveryStore"],
+                            }
+                        )
+                    else:
+                        jsondata["restaurants"].append(
+                            {
+                                "id": store_id,
+                                "address": "Hell",
+                                "time": store["minDeliveryEta"],
+                                "isOpen": True,
+                                "isDelivery": True,
+                            }
+                        )
+
     x = json.dumps(jsondata)
     return x
 
@@ -114,63 +161,64 @@ def address_lookup(zipcode, address):
 def get_menu(store_id):
     food = {"categories": {}}
     response = requests.get(
-        f"{api_urls[country]}/power/store/{store_id}/menu?lang=en&structured=true",
+        f"{eatstreet_api_url}/restaurants/{store_id}/menu",
         verify=True,
         headers=get_headers(),
     )
     s2 = response.json()
-    for cat in s2["Categorization"]["Food"]["Categories"]:
-        food["categories"].update({cat["Code"]: {}})
-        for prods in s2["Products"]:
-            if s2["Products"][prods]["ProductType"] == cat["Code"]:
-                food["categories"][cat["Code"]].update(
-                    {
-                        prods: {
-                            "name": s2["Products"][prods]["Name"],
-                            "desc": s2["Products"][prods]["Description"],
-                            "items": [],
-                        }
-                    }
-                )
-
-    for cat2 in s2["Categorization"]["Food"]["Categories"]:
-        for cazzo in s2["Products"]:
-            if cat2["Code"] == s2["Products"][cazzo]["ProductType"]:
-                for item in s2["Variants"]:
-                    if s2["Variants"][item]["ProductCode"] == cazzo:
-                        food["categories"][cat2["Code"]][cazzo]["items"].append(
-                            {
-                                "code": item,
-                                "name": s2["Variants"][item]["Name"],
-                                "price": s2["Variants"][item]["Price"],
-                                "img": s2["Variants"][item]["ProductCode"],
-                                "size": s2["Variants"][item]["SizeCode"],
+    i = 0
+    for cat in s2["categories"]:
+        i += 1
+        if i > 0:
+            food["categories"].update({cat["id"]: {}})
+            for prods in s2["products"]:
+                if s2["categoryId"] == cat["id"]:
+                    food["categories"][cat["id"]].update(
+                        {
+                            prods: {
+                                "name": s2["products"][prods]["name"].split(" - ")[0],
+                                "desc": s2["products"][prods]["description"],
+                                "items": [],
                             }
-                        )
+                        }
+                    )
+                    food["categories"][cat["id"]][s2["products"][prods]["id"]][
+                        "items"
+                    ].append(
+                        {
+                            "code": s2["products"][prods]["id"],
+                            "name": s2["products"][prods]["name"].split(" - ")[0],
+                            "price": s2["products"][prods]["price"],
+                            "img": "",
+                            "size": s2["products"][prods]["name"].split(" - ")[1],
+                        }
+                    )
     x = json.dumps(food)
     return x
 
 
-def get_recommended(store_id):
+def get_recommended_eatstreet(store_id):
     count = 0
     food = {"recommended": {}}
     response = requests.get(
-        f"{api_urls[country]}/power/store/{store_id}/menu?lang=en&structured=true",
+        f"{eatstreet_api_url}/restaurants/{store_id}/menu",
         verify=True,
         headers=get_headers(),
     )
     s2 = response.json()
-    for cat in s2["PreconfiguredProducts"]:
-        count = count + 1
-        if count <= 4:
-            food["recommended"].update({cat: {}})
-            food["recommended"][cat].update(
-                {
-                    "code": cat,
-                    "name": s2["PreconfiguredProducts"][cat]["Name"],
-                    "code": s2["PreconfiguredProducts"][cat]["Code"],
-                }
-            )
+    cat = s2["categories"][0]
+    for prods in s2["products"]:
+        if str(prods["categoryId"]) == str(cat["id"]):
+            count = count + 1
+            if count <= 4:
+                food["recommended"].update({prods["id"]: {}})
+                food["recommended"][prods["id"]].update(
+                    {
+                        "code": cat,
+                        "name": prods["name"].split(" - ")[0],
+                        "code": prods["id"],
+                    }
+                )
 
     x = json.dumps(food)
     return x
@@ -179,7 +227,7 @@ def get_recommended(store_id):
 def get_food_price(store_id, item_id):
     food = {"food": {}}
     response = requests.get(
-        f"{api_urls[country]}/power/store/{store_id}/menu?lang=en&structured=true",
+        f"{eatstreet_api_url}/power/store/{store_id}/menu?lang=en&structured=true",
         verify=True,
         headers=get_headers(),
     )
@@ -199,7 +247,7 @@ def get_food_price(store_id, item_id):
 def add_food_item(store_id, code, qty, num):
     tagok = json.loads("{}")
     response = requests.get(
-        f"{api_urls[country]}/power/store/{store_id}/menu?lang=en&structured=true",
+        f"{eatstreet_api_url}/power/store/{store_id}/menu?lang=en&structured=true",
         verify=True,
         headers=get_headers(),
     )
@@ -265,7 +313,7 @@ def get_price(
             "PhonePrefix": "",
             "Products": prods,
             "ServiceMethod": "Delivery",
-            "SourceOrganizationURI": api_urls[country],
+            "SourceOrganizationURI": eatstreet_api_url,
             "StoreID": store_id,
             "Tags": {},
             "Version": "1.0",
@@ -283,11 +331,11 @@ def get_price(
         "User-Agent": "Mozilla/5.0 (iPhone; CPU OS 14_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/31.0 Mobile/15E148 Safari/605.1.15",
         "Accept-Language": "en-US,en;q=0.5",
         "Content-Type": "application/json; charset=utf-8",
-        "Origin": f"{api_urls[country]}",
-        "Referer": f"{api_urls[country]}/assets/build/xdomain/proxy.html",
+        "Origin": f"{eatstreet_api_url}",
+        "Referer": f"{eatstreet_api_url}/assets/build/xdomain/proxy.html",
     }
     response = requests.post(
-        f"{api_urls[country]}/power/validate-order",
+        f"{eatstreet_api_url}/power/validate-order",
         verify=True,
         headers=headers2,
         data=json.dumps(bigorder),
@@ -295,7 +343,7 @@ def get_price(
     orderiddi = json.loads(response.text)["Order"]["OrderID"]
     bigorder["Order"]["OrderID"] = orderiddi
     response = requests.post(
-        f"{api_urls[country]}/power/validate-order",
+        f"{eatstreet_api_url}/power/validate-order",
         verify=True,
         headers=headers2,
         data=json.dumps(bigorder),
@@ -304,7 +352,7 @@ def get_price(
     bigorder["Order"]["OrderID"] = orderiddi
     bigorder["Order"].update({"metaData": {"orderFunnel": "payments"}})
     response = requests.post(
-        f"{api_urls[country]}/power/price-order",
+        f"{eatstreet_api_url}/power/price-order",
         verify=True,
         headers=headers2,
         data=json.dumps(bigorder),
@@ -338,8 +386,8 @@ def place_order(
         "User-Agent": "Mozilla/5.0 (iPhone; CPU OS 14_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/31.0 Mobile/15E148 Safari/605.1.15",
         "Accept-Language": "en-US,en;q=0.5",
         "Content-Type": "application/json; charset=utf-8",
-        "Origin": f"{api_urls[country]}",
-        "Referer": f"{api_urls[country]}/assets/build/xdomain/proxy.html",
+        "Origin": f"{eatstreet_api_url}",
+        "Referer": f"{eatstreet_api_url}/assets/build/xdomain/proxy.html",
     }
     bigorder = {
         "Order": {
@@ -368,7 +416,7 @@ def place_order(
             "PhonePrefix": "",
             "Products": prods,
             "ServiceMethod": "Delivery",
-            "SourceOrganizationURI": api_urls[country],
+            "SourceOrganizationURI": eatstreet_api_url,
             "StoreID": store_id,
             "Tags": {},
             "Version": "1.0",
@@ -408,7 +456,7 @@ def place_order(
         }
     )
     response = requests.post(
-        f"{api_urls[country]}/power/place-order",
+        f"{eatstreet_api_url}/power/place-order",
         verify=True,
         headers=headers2,
         data=json.dumps(bigorder),

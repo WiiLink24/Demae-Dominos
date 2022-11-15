@@ -12,6 +12,7 @@ from areas import *
 import json
 from dominos import domino
 from dominos.country import country, store_country
+from eatstreet import eatstreet
 import uuid
 import textwrap
 from datetime import datetime
@@ -451,14 +452,14 @@ def shop_one(request):
     activate = "on"
 
     shop_id = request.args.get("shopCode")
-    x = json.loads(domino.get_recommended(shop_id))
-    info = domino.get_store_info(shop_id)
+    x = json.loads(eatstreet.get_recommended_eatstreet(shop_id))
+    info = eatstreet.get_store_info_eatstreet(shop_id)
 
     menucode = 0
     menus = {"response": {}}
 
-    if not info["is_open"]:
-        activate = "off"
+    """if not info["is_open"]:
+        activate = "off"""
 
     delivery_start_time = f'{info["service_hours"]["OpenTime"]}:00'
     delivery_end_time = f'{info["service_hours"]["CloseTime"]}:00'
@@ -675,7 +676,9 @@ def formulate_restaurant(request, category_id: int, area_code) -> dict:
         "CategoryList": {
             "TestingCategory": {
                 "CategoryCode": f"{category_id:02}",
-                "ShopList": {"Shop": get_restaurant(request, area_code)},
+                "ShopList": {
+                    "Shop": get_restaurant(request, area_code, f"{category_id:02}")
+                },
             }
         },
     }
@@ -692,7 +695,16 @@ def category_list(request):
     return {
         "response": {
             "Pizza": formulate_restaurant(request, 1, area_code),
-            "Placeholder": formulate_restaurant(request, 2, area_code),
+            "Bento_Box": formulate_restaurant(request, 2, area_code),
+            "Sushi": formulate_restaurant(request, 3, area_code),
+            "Fish": formulate_restaurant(request, 4, area_code),
+            "Seafood": formulate_restaurant(request, 5, area_code),
+            "Western": formulate_restaurant(request, 6, area_code),
+            "Fast_Food": formulate_restaurant(request, 7, area_code),
+            "Curry": formulate_restaurant(request, 8, area_code),
+            "Party_Food": formulate_restaurant(request, 9, area_code),
+            "Drinks": formulate_restaurant(request, 10, area_code),
+            "Other": formulate_restaurant(request, 11, area_code),
         }
     }
 
