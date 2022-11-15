@@ -317,6 +317,7 @@ def get_price(
 
 def place_order(
     street,
+    apartment_number,
     city,
     region,
     postal,
@@ -329,7 +330,6 @@ def place_order(
     lastname,
     email,
     phone_num,
-    delivery_instructions,
     order_id,
     money,
 ):
@@ -344,6 +344,7 @@ def place_order(
         "Origin": f"{api_urls[country]}",
         "Referer": f"{api_urls[country]}/assets/build/xdomain/proxy.html",
     }
+
     bigorder = {
         "Order": {
             "Address": {
@@ -371,7 +372,7 @@ def place_order(
             "PhonePrefix": "",
             "Products": prods,
             "ServiceMethod": "Delivery",
-            "SourceOrganizationURI": api_urls[country],
+            "SourceOrganizationURI": "order.dominos.com",
             "StoreID": store_id,
             "Tags": {},
             "Version": "1.0",
@@ -381,7 +382,15 @@ def place_order(
             "OrderInfoCollection": [],
         }
     }
-    bigorder["Order"]["Address"].update({"DeliveryInstructions": delivery_instructions})
+
+    if apartment_number:
+        bigorder["Order"]["Address"].update(
+            {"AddressLine2": apartment_number}
+        )
+
+    bigorder["Order"]["Address"].update(
+        {"DeliveryInstructions": "None"}
+    )
     bigorder["Order"].update(
         {
             "Payments": [
