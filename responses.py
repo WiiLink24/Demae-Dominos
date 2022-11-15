@@ -21,9 +21,9 @@ from food import db
 @response()
 def inquiry_done(_):
     """The request a restaurant part.
-    In the forms, it give us the telephone of the restaurant,
+    In the forms, it gives us the telephone of the restaurant,
     name of the restaurant, and restaurant type.
-    TODO: append to database"""
+    """
 
     return {}
 
@@ -52,10 +52,16 @@ def order_done(request):
     state = ""
     street = ""
     street_number = ""
+    apartment_number = None
+    location_type = "House"
 
     location = get_all_address_data(address, zip_code)
 
     for data in location.raw["address_components"]:
+        if data["types"] == ["subpremise"]:
+            apartment = data["long_name"]
+            apartment_number = apartment.replace(" ", "-").upper()
+            location_type = "Apartment"
         if data["types"] == ["street_number"]:
             street_number = data["long_name"]
         elif data["types"] == ["route"]:
@@ -67,10 +73,11 @@ def order_done(request):
 
     data = domino.place_order(
         address,
+        apartment_number,
         city,
         state,
         zip_code,
-        "House",
+        location_type,
         street,
         street_number,
         shop_code,
@@ -79,7 +86,6 @@ def order_done(request):
         last_name,
         email,
         phone_number,
-        "None",
         basket.order_id,
         basket.price,
     )
