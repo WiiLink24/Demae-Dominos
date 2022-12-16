@@ -193,6 +193,22 @@ func (d *Dominos) GetItemList(storeId string, menuCode string) ([]Item, error) {
 			for _, a := range menuData.(map[string]any)["Products"].([]any) {
 				itemNames = append(itemNames, a.(string))
 			}
+
+			if len(itemNames) == 0 {
+				// For some reason Domino's has a parent code the same as a child code.
+				// Regardless, no items mean this is a parent category.
+				subcategories, ok := menuData.(map[string]any)["Categories"].([]any)
+				if ok {
+					for _, subcategory := range subcategories {
+						if subcategory.(map[string]any)["Code"].(string) == menuCode {
+							for _, a := range subcategory.(map[string]any)["Products"].([]any) {
+								itemNames = append(itemNames, a.(string))
+							}
+							break
+						}
+					}
+				}
+			}
 			break
 		} else {
 			// Here is where things get tricky. It is possible we have a menu that is nested. Unfortunately we need to iterate over the subcategory.
