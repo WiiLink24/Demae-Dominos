@@ -44,7 +44,7 @@ func getToppings(r *http.Request) ([]any, error) {
 			},
 			{
 				XMLName: xml.Name{Local: "container1"},
-				Info:    CDATA{"Please choose your meats. The * items are extra. Note you can only have 10 toppings."},
+				Info:    CDATA{"Please choose your meats. The * items are extra.\nNote you can only have 10 toppings."},
 				Code:    CDATA{0},
 				Type:    CDATA{1},
 				Name:    CDATA{"Meats"},
@@ -54,7 +54,7 @@ func getToppings(r *http.Request) ([]any, error) {
 			},
 			{
 				XMLName: xml.Name{Local: "container2"},
-				Info:    CDATA{"Please choose your non-meats. The * items are extra. Note you can only have 10 toppings."},
+				Info:    CDATA{"Please choose your non-meats. The * items are extra.\nNote you can only have 10 toppings."},
 				Code:    CDATA{0},
 				Type:    CDATA{1},
 				Name:    CDATA{"Non-Meats"},

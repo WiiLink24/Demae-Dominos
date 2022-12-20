@@ -153,7 +153,6 @@ func itemList(r *Response) {
 	for i, item := range itemData {
 		name := wordwrap.WrapString(item.Name, 26)
 		for i, s := range strings.Split(name, "\n") {
-			fmt.Println(name)
 			switch i {
 			case 0:
 				name = s
@@ -204,10 +203,27 @@ func itemList(r *Response) {
 		}
 
 		for i2, size := range item.Items {
+			sizeName := wordwrap.WrapString(size.Name, 21)
+			for i, s := range strings.Split(sizeName, "\n") {
+				switch i {
+				case 0:
+					sizeName = s
+					break
+				case 1:
+					sizeName += "\n"
+					sizeName += s
+					break
+				default:
+					// If it is too long it becomes ... so we are fine
+					sizeName += " " + s
+					break
+				}
+			}
+
 			nestedItem.Item.SizeList.Value = append(nestedItem.Item.SizeList.Value, ItemSize{
 				XMLName:   xml.Name{Local: fmt.Sprintf("item%d", i2)},
 				ItemCode:  CDATA{size.Code},
-				Size:      CDATA{size.Name},
+				Size:      CDATA{sizeName},
 				Price:     CDATA{size.Price},
 				IsSoldout: CDATA{BoolToInt(false)},
 			})

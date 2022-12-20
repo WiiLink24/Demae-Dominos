@@ -68,7 +68,13 @@ func (r *Route) Handle() http.Handler {
 			// 2. An unauthorized user bypassed the boot lock and tried to access.
 			// We deny entry and report.
 			printError(w, "Unauthorized user", http.StatusUnauthorized)
-			PostDiscordWebhook("Unauthorized user!", fmt.Sprintf("A user who is not registered in the database has attempted to access the channel! Wii ID: %s", req.Header.Get("X-WiiID")), config.ErrorWebhook, 16711711)
+			_, ok := req.Header["X-Address"]
+			if ok {
+				// This request was made from a Wii.
+				// If it wasn't ignore because it could be web crawlers among other things.
+				PostDiscordWebhook("Unauthorized user!", fmt.Sprintf("A user who is not registered in the database has attempted to access the channel! Wii ID: %s", req.Header.Get("X-WiiID")), config.ErrorWebhook, 16711711)
+			}
+			
 			_ = dataDog.Incr("demae-dominos.unauthorized_users", nil, 1)
 			return
 		}
@@ -88,6 +94,10 @@ func (r *Route) Handle() http.Handler {
 			img := dom.DownloadAndReturnImage(imageName)
 			w.Write(img)
 			return
+		} else if strings.Contains(req.URL.Path, "logoimg2") {
+			// Serve Domino's logo
+			w.Write(dominos.DominosLogo)
+			return
 		}
 
 		// If this is a POST request it is either an actual request or an error.
@@ -96,7 +106,6 @@ func (r *Route) Handle() http.Handler {
 		var userAgent string
 		if req.Method == "POST" {
 			req.ParseForm()
-			fmt.Println(req.PostForm.Get("action"))
 			actionName = req.PostForm.Get("action")
 			userAgent = req.PostForm.Get("platform")
 			serviceType = "nwapi.php"

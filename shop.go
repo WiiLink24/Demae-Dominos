@@ -22,7 +22,7 @@ func shopOne(r *Response) {
 	shop := ShopOne{
 		CategoryCode:  CDATA{"01"},
 		Address:       CDATA{shopData.Address},
-		Information:   CDATA{"idk"},
+		Information:   CDATA{shopData.Information},
 		Attention:     CDATA{"why"},
 		Amenity:       CDATA{"Domino's Pizza"},
 		MenuListCode:  CDATA{1},

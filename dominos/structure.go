@@ -34,6 +34,7 @@ type Store struct {
 	DetailedWait string
 	Phone        string
 	ServiceHours ServiceHours
+	Information  string
 }
 
 type ServiceHours struct {

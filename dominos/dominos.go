@@ -37,9 +37,13 @@ func (d *Dominos) StoreLookup(zipCode, address string) ([]Store, error) {
 			break
 		}
 
+		storeAddress := storeData.(map[string]any)["AddressDescription"].(string)
+		if storeData.(map[string]any)["LocationInfo"].(string) != "" {
+			storeAddress = strings.Split(storeAddress, storeData.(map[string]any)["LocationInfo"].(string))[0]
+		}
 		store := Store{
 			StoreID:  storeData.(map[string]any)["StoreID"].(string),
-			Address:  strings.Replace(storeData.(map[string]any)["AddressDescription"].(string), "\n", " ", -1),
+			Address:  strings.Replace(storeAddress, "\n", " ", -1),
 			WaitTime: storeData.(map[string]any)["ServiceMethodEstimatedWaitMinutes"].(map[string]any)["Delivery"].(map[string]any)["Min"].(float64),
 			IsOpen:   storeData.(map[string]any)["IsOpen"].(bool),
 		}
@@ -107,6 +111,11 @@ func (d *Dominos) GetStoreInfo(storeId string) (*Store, error) {
 		return nil, err
 	}
 
+	information := ""
+	if jsonData["LocationInfo"] != nil {
+		information = jsonData["LocationInfo"].(string)
+	}
+
 	return &Store{
 		StoreID:      jsonData["StoreID"].(string),
 		Address:      strings.Replace(jsonData["AddressDescription"].(string), "\n", " ", -1),
@@ -116,6 +125,7 @@ func (d *Dominos) GetStoreInfo(storeId string) (*Store, error) {
 		DetailedWait: jsonData["EstimatedWaitMinutes"].(string),
 		Phone:        jsonData["Phone"].(string),
 		ServiceHours: ServiceHours{},
+		Information:  information,
 	}, nil
 }
 

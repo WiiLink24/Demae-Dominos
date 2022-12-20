@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/gofrs/uuid"
+	"github.com/mitchellh/go-wordwrap"
 	"net/http"
 	"strconv"
 	"strings"
@@ -266,13 +267,29 @@ func basketList(r *Response) {
 				IsSoldout:  CDATA{BoolToInt(false)},
 			})
 		}
+		name := wordwrap.WrapString(*item.Name, 29)
+		for i, s := range strings.Split(name, "\n") {
+			switch i {
+			case 0:
+				name = s
+				break
+			case 1:
+				name += "\n"
+				name += s
+				break
+			default:
+				// If it is too long it becomes ... so we are fine
+				name += " " + s
+				break
+			}
+		}
 
 		basketItems = append(basketItems, BasketItem{
 			XMLName:       xml.Name{Local: fmt.Sprintf("container%d", i)},
 			BasketNo:      CDATA{i + 1},
 			MenuCode:      CDATA{1},
 			ItemCode:      CDATA{item.Code},
-			Name:          CDATA{item.Name},
+			Name:          CDATA{name},
 			Price:         CDATA{item.Price},
 			Size:          CDATA{""},
 			IsSoldout:     CDATA{BoolToInt(false)},
@@ -353,9 +370,6 @@ func orderDone(r *Response) {
 		return
 	}
 
-	fmt.Println(user.StreetNumber)
-	fmt.Println(user.LocationType)
-	fmt.Println(user.Region)
 	user.StoreId = r.request.PostForm.Get("shop[ShopCode]")
 	user.FirstName = r.request.PostForm.Get("member[Name1]")
 	user.LastName = r.request.PostForm.Get("member[Name2]")

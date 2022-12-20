@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/remizovm/geonames"
 	"github.com/remizovm/geonames/models"
-	"googlemaps.github.io/maps"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 	"log"
@@ -23,7 +22,6 @@ import (
 )
 
 var pool *pgxpool.Pool
-var geocoder *maps.Client
 var geonameCities map[int]*models.Feature
 var dataDog *statsd.Client
 var config *Config
@@ -71,9 +69,6 @@ func main() {
 
 	// Ensure this Postgresql connection is valid.
 	defer pool.Close()
-
-	// Initialize Google Maps API
-	geocoder, err = maps.NewClient(maps.WithAPIKey(config.GoogleMapsAPIKey))
 
 	// Initialize Geonames cities array.
 	client := geonames.Client{}
