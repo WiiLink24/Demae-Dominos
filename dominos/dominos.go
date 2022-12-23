@@ -449,9 +449,12 @@ func (d *Dominos) AddItem(storeId, itemId, quantity string, extraToppings []Topp
 			}
 		} else {
 			if _, ok := options[topping.Code]; ok {
-				// Maximize the amount of topping since this item already contains it
-				options[topping.Code] = map[string]string{
-					"1/1": "1.5",
+				if topping.Group != Sauce {
+					// We do not maximize sauce.
+					// Maximize the amount of topping since this item already contains it
+					options[topping.Code] = map[string]string{
+						"1/1": "1.5",
+					}
 				}
 			} else {
 				// Topping does not exist on item, add it
@@ -591,7 +594,7 @@ func (d *Dominos) GetPrice(user *User) (*Basket, error) {
 	}
 
 	if jsonData["Status"].(float64) != 0 && jsonData["Status"].(float64) != 1 {
-		return nil, fmt.Errorf("domino's returned a status code of %.0f", jsonData["Status"].(float64))
+		return nil, fmt.Errorf("domino's returned a status code of %.0f\nError: %s", jsonData["Status"].(float64), jsonData["StatusItems"].([]any)[0].(map[string]any)["Code"].(string))
 	}
 
 	var items []BasketItem
