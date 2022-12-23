@@ -28,6 +28,7 @@ type Config struct {
 type Response struct {
 	ResponseFields      any
 	hasError            bool
+	wiiID               string
 	request             *http.Request
 	writer              *http.ResponseWriter
 	isMultipleRootNodes bool
