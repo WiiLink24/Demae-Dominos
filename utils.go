@@ -2,13 +2,17 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/logrusorgru/aurora/v4"
 	"log"
 	"net/http"
 )
+
+const QueryDiscordID = `SELECT "user".discord_id FROM "user" WHERE "user".wii_id = $1 LIMIT 1`
 
 func NewResponse(r *http.Request, w *http.ResponseWriter, xmlType XMLType) *Response {
 	return &Response{
@@ -16,6 +20,7 @@ func NewResponse(r *http.Request, w *http.ResponseWriter, xmlType XMLType) *Resp
 			XMLName: xml.Name{Local: "response"},
 			Value:   nil,
 		},
+		wiiID:               r.Header.Get("X-WiiID"),
 		request:             r,
 		writer:              w,
 		isMultipleRootNodes: xmlType == 1,
@@ -172,7 +177,14 @@ func PostDiscordWebhook(title, message, url string, color int) {
 func (r *Response) ReportError(err error, code int) {
 	sentry.CaptureException(err)
 	log.Printf("An error has occurred: %s", aurora.Red(err.Error()))
-	PostDiscordWebhook("An error has occurred in Demae Domino's!", err.Error(), config.ErrorWebhook, 16711711)
+
+	var discord_id string
+	row := pool.QueryRow(context.Background(), QueryDiscordID, r.request.Header.Get("X-WiiID"))
+	_err := row.Scan(&discord_id)
+	sentry.CaptureException(_err)
+
+	errorString := fmt.Sprintf("%s\nWii ID: %s\nDiscord ID: %s", err.Error(), r.wiiID, discord_id)
+	PostDiscordWebhook("An error has occurred in Demae Domino's!", errorString, config.ErrorWebhook, 16711711)
 
 	// Write response
 	r.hasError = true
