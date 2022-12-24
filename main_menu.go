@@ -39,9 +39,9 @@ func categoryList(r *Response) {
 		return
 	}
 
-	storesXML := make([]BasicShop, 5)
+	var storesXML []BasicShop
 
-	for i, storeData := range stores {
+	for _, storeData := range stores {
 		store := BasicShop{
 			ShopCode:    CDATA{storeData.StoreID},
 			HomeCode:    CDATA{1},
@@ -77,7 +77,7 @@ func categoryList(r *Response) {
 			},
 		}
 
-		storesXML[i] = store
+		storesXML = append(storesXML, store)
 	}
 
 	shops := KVFieldWChildren{
@@ -110,9 +110,42 @@ func categoryList(r *Response) {
 		},
 	}
 
+	placeholder := KVFieldWChildren{
+		XMLName: xml.Name{Local: "Placeholder"},
+		Value: []any{
+			KVField{
+				XMLName: xml.Name{Local: "LargeCategoryName"},
+				Value:   "Meal",
+			},
+			KVFieldWChildren{
+				XMLName: xml.Name{Local: "CategoryList"},
+				Value: []any{
+					KVFieldWChildren{
+						XMLName: xml.Name{Local: "TestingCategory"},
+						Value: []any{
+							KVField{
+								XMLName: xml.Name{Local: "CategoryCode"},
+								Value:   "02",
+							},
+							KVFieldWChildren{
+								XMLName: xml.Name{Local: "ShopList"},
+								Value: []any{
+									storesXML,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
 	r.AddCustomType(shops)
-	shops.XMLName = xml.Name{Local: "Placeholder"}
-	r.AddCustomType(shops)
+
+	// It there is no nearby stores, we do not add the placeholder. This will tell the user there are no stores.
+	if storesXML != nil && r.request.URL.Query().Get("action") != "webApi_shop_list" {
+		r.AddCustomType(placeholder)
+	}
 }
 
 func inquiryDone(r *Response) {

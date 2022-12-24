@@ -31,10 +31,14 @@ func (d *Dominos) StoreLookup(zipCode, address string) ([]Store, error) {
 		return nil, err
 	}
 
-	stores := make([]Store, 5)
+	var stores []Store
 	for i, storeData := range jsonData["Stores"].([]any) {
 		if i == 5 {
 			break
+		}
+
+		if !storeData.(map[string]any)["IsDeliveryStore"].(bool) {
+			continue
 		}
 
 		storeAddress := storeData.(map[string]any)["AddressDescription"].(string)
@@ -48,7 +52,7 @@ func (d *Dominos) StoreLookup(zipCode, address string) ([]Store, error) {
 			IsOpen:   storeData.(map[string]any)["IsOpen"].(bool),
 		}
 
-		stores[i] = store
+		stores = append(stores, store)
 	}
 
 	return stores, nil

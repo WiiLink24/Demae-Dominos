@@ -74,7 +74,7 @@ func (r *Route) Handle() http.Handler {
 				// If it wasn't ignore because it could be web crawlers among other things.
 				PostDiscordWebhook("Unauthorized user!", fmt.Sprintf("A user who is not registered in the database has attempted to access the channel! Wii ID: %s", req.Header.Get("X-WiiID")), config.ErrorWebhook, 16711711)
 			}
-			
+
 			_ = dataDog.Incr("demae-dominos.unauthorized_users", nil, 1)
 			return
 		}
