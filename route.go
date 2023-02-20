@@ -2,8 +2,6 @@ package main
 
 import (
 	"DemaeDominos/dominos"
-	"context"
-	"fmt"
 	"github.com/getsentry/sentry-go"
 	"net/http"
 	"strings"
@@ -59,26 +57,6 @@ func (r *RoutingGroup) MultipleRootNodes(action string, function func(*Response)
 
 func (r *Route) Handle() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		var temp string
-		row := pool.QueryRow(context.Background(), QueryUserBasket, req.Header.Get("X-WiiID"))
-		err := row.Scan(&temp)
-		if err != nil {
-			// There are 2 possible reasons for this happening.
-			// 1. Postgres spontaneously died in which case we will be alerted else where
-			// 2. An unauthorized user bypassed the boot lock and tried to access.
-			// We deny entry and report.
-			printError(w, "Unauthorized user", http.StatusUnauthorized)
-			_, ok := req.Header["X-Address"]
-			if ok {
-				// This request was made from a Wii.
-				// If it wasn't ignore because it could be web crawlers among other things.
-				PostDiscordWebhook("Unauthorized user!", fmt.Sprintf("A user who is not registered in the database has attempted to access the channel! Wii ID: %s", req.Header.Get("X-WiiID")), config.ErrorWebhook, 16711711)
-			}
-
-			_ = dataDog.Incr("demae-dominos.unauthorized_users", nil, 1)
-			return
-		}
-
 		// First check if it is an image route.
 		if strings.Contains(req.URL.Path, "itemimg") {
 			splitUrl := strings.Split(req.URL.Path, "/")
