@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-const InsertUser = `UPDATE "user" SET area_code = $1, basket = $2 WHERE wii_id = $2`
+const InsertUser = `UPDATE "user" SET area_code = $1, basket = $2 WHERE wii_id = $3`
 
 var canadianProvinces = map[string]string{
 	"01": "Alberta",
