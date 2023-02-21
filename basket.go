@@ -402,8 +402,8 @@ func orderDone(r *Response) {
 	_ = dataDog.Incr("demae-dominos.orders_placed", nil, 1)
 	
 	var discordId string
-	row := pool.QueryRow(context.Background(), `SELECT "user".discord_id FROM "user" WHERE "user".wii_id = $1`, r.request.Header.Get("X-WiiID"))
-	err := row.Scan(&discordId)
+	row = pool.QueryRow(context.Background(), `SELECT "user".discord_id FROM "user" WHERE "user".wii_id = $1`, r.request.Header.Get("X-WiiID"))
+	err = row.Scan(&discordId)
 	if err != nil {
 		r.ReportError(err, http.StatusInternalServerError)
 		return
