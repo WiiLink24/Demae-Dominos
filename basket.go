@@ -398,11 +398,20 @@ func orderDone(r *Response) {
 		return
 	}
 
-	// Post and log successful order !
+	// Post and log successful order!
 	_ = dataDog.Incr("demae-dominos.orders_placed", nil, 1)
+	
+	var discordId string
+	row := pool.QueryRow(context.Background(), `SELECT "user".discord_id FROM "user" WHERE "user".wii_id = $1`, r.request.Header.Get("X-WiiID"))
+	err := row.Scan(&discordId)
+	if err != nil {
+		r.ReportError(err, http.StatusInternalServerError)
+		return
+	}
+	
 	PostDiscordWebhook(
 		"A successful order has been processed!",
-		fmt.Sprintf("The order was placed by user id %s", r.request.Header.Get("X-WiiID")),
+		fmt.Sprintf("Wii ID: %s\nDiscord ID: %s", r.request.Header.Get("X-WiiID"), discordId),
 		config.OrderWebhook,
 		65311,
 	)
