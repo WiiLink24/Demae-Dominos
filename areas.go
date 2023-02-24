@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-const InsertUser = `UPDATE "user" SET area_code = $1, basket = $2 WHERE wii_id = $3`
+const InsertUser = `INSERT INTO "user" (area_code, wii_id) VALUES ($1, $2)`
 
 var canadianProvinces = map[string]string{
 	"01": "Alberta",
@@ -256,7 +256,7 @@ func areaList(r *Response) {
 	}
 
 	newAreaCode := GenerateAreaCode(areaCode)
-	_, err := pool.Exec(context.Background(), InsertUser, newAreaCode, "", r.request.Header.Get("X-WiiID"))
+	_, err := pool.Exec(context.Background(), InsertUser, newAreaCode, r.request.Header.Get("X-WiiID"))
 	if err != nil {
 		r.ReportError(err, http.StatusInternalServerError)
 		return

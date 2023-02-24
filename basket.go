@@ -379,7 +379,7 @@ func orderDone(r *Response) {
 	user.OrderId = orderId
 	user.Price = price
 
-	// dom.PlaceOrder(user)
+	dom.PlaceOrder(user)
 
 	currentTime := time.Now().Format("200602011504")
 	r.AddKVWChildNode("Message", KVField{
@@ -398,20 +398,11 @@ func orderDone(r *Response) {
 		return
 	}
 
-	// Post and log successful order!
+	// Post and log successful order !
 	_ = dataDog.Incr("demae-dominos.orders_placed", nil, 1)
-	
-	var discordId string
-	row = pool.QueryRow(context.Background(), `SELECT "user".discord_id FROM "user" WHERE "user".wii_id = $1`, r.request.Header.Get("X-WiiID"))
-	err = row.Scan(&discordId)
-	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
-		return
-	}
-	
 	PostDiscordWebhook(
 		"A successful order has been processed!",
-		fmt.Sprintf("Wii ID: %s\nDiscord ID: %s", r.request.Header.Get("X-WiiID"), discordId),
+		fmt.Sprintf("The order was placed by user id %s", r.request.Header.Get("X-WiiID")),
 		config.OrderWebhook,
 		65311,
 	)
