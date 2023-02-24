@@ -379,7 +379,18 @@ func orderDone(r *Response) {
 	user.OrderId = orderId
 	user.Price = price
 
-	dom.PlaceOrder(user)
+	// If the error does fail we should alert the user and allow for the basket to be cleared.
+	didError := false
+	err = dom.PlaceOrder(user)
+	if err != nil {
+		PostDiscordWebhook(
+			"Performing error failed.",
+			fmt.Sprintf("The order was placed by user id %s", r.request.Header.Get("X-WiiID")),
+			config.OrderWebhook,
+			65311,
+		)
+		didError = true
+	}
 
 	currentTime := time.Now().Format("200602011504")
 	r.AddKVWChildNode("Message", KVField{
@@ -393,7 +404,7 @@ func orderDone(r *Response) {
 
 	// Remove the order data from the database
 	_, err = pool.Exec(context.Background(), `UPDATE "user" SET order_id = $1, price = $2, basket = $3 WHERE wii_id = $4`, "", "", "[]", r.request.Header.Get("X-WiiID"))
-	if err != nil {
+	if err != nil || didError {
 		r.ReportError(err, http.StatusInternalServerError)
 		return
 	}
