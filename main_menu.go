@@ -40,18 +40,23 @@ func categoryList(r *Response) {
 	}
 
 	var storesXML []BasicShop
-
 	for _, storeData := range stores {
+		// We need to get the actual min price
+		shopData, err := dom.GetStoreInfo(storeData.StoreID)
+		if err != nil {
+			r.ReportError(err, http.StatusInternalServerError)
+			return
+		}
+
 		store := BasicShop{
 			ShopCode:    CDATA{storeData.StoreID},
 			HomeCode:    CDATA{1},
 			Name:        CDATA{"Domino's Pizza"},
 			Catchphrase: CDATA{storeData.Address},
-			// Min Price has been observed to be an average of $17 at most stores.
-			MinPrice: CDATA{17},
-			Yoyaku:   CDATA{1},
-			Activate: CDATA{"on"},
-			WaitTime: CDATA{storeData.WaitTime},
+			MinPrice:    CDATA{shopData.MinPrice},
+			Yoyaku:      CDATA{1},
+			Activate:    CDATA{"on"},
+			WaitTime:    CDATA{storeData.WaitTime},
 			PaymentList: KVFieldWChildren{
 				XMLName: xml.Name{Local: "paymentList"},
 				Value: []any{
