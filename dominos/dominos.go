@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/mitchellh/go-wordwrap"
 	"golang.org/x/exp/slices"
 	"io"
 	"net/http"
