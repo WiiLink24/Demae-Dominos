@@ -119,10 +119,26 @@ func (d *Dominos) GetStoreInfo(storeId string) (*Store, error) {
 	if jsonData["LocationInfo"] != nil {
 		information = jsonData["LocationInfo"].(string)
 	}
+	
+
+	address := wordwrap.WrapString(strings.Replace(jsonData["AddressDescription"].(string), "\n", " ", -1), 38)
+	for i3, s := range strings.Split(address, "\n") {
+		switch i3 {
+		case 0:
+			address = s
+			break
+		case 1:
+			address += "\n"
+			address += s
+			break
+		default:
+			break
+		}
+	}
 
 	return &Store{
 		StoreID:      jsonData["StoreID"].(string),
-		Address:      strings.Replace(jsonData["AddressDescription"].(string), "\n", " ", -1),
+		Address:      address,
 		WaitTime:     jsonData["ServiceMethodEstimatedWaitMinutes"].(map[string]any)["Delivery"].(map[string]any)["Min"].(float64),
 		MinPrice:     jsonData["MinimumDeliveryOrderAmount"].(float64),
 		IsOpen:       jsonData["IsOpen"].(bool),
