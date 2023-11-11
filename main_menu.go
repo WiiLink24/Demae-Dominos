@@ -29,13 +29,13 @@ func documentTemplate(r *Response) {
 func categoryList(r *Response) {
 	dom, err := dominos.NewDominos(pool, r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized)
+		r.ReportError(err, http.StatusUnauthorized, dom.JsonResponse())
 		return
 	}
 
-	stores, err := dom.StoreLookup(r.request.Header.Get("X-Postalcode"), r.request.Header.Get("X-Address"))
+	stores, err := dom.StoreLookup("M6L2K7", "132 Cornelius Parkway")
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
@@ -44,7 +44,7 @@ func categoryList(r *Response) {
 		// We need to get the actual min price
 		shopData, err := dom.GetStoreInfo(storeData.StoreID)
 		if err != nil {
-			r.ReportError(err, http.StatusInternalServerError)
+			r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 			return
 		}
 
@@ -52,7 +52,7 @@ func categoryList(r *Response) {
 			ShopCode:    CDATA{storeData.StoreID},
 			HomeCode:    CDATA{1},
 			Name:        CDATA{"Domino's Pizza"},
-			Catchphrase: CDATA{storeData.Address},
+			Catchphrase: CDATA{"Nope"},
 			MinPrice:    CDATA{shopData.MinPrice},
 			Yoyaku:      CDATA{1},
 			Activate:    CDATA{"on"},
@@ -173,5 +173,5 @@ func inquiryDone(r *Response) {
 		shiftJisDecoder(r.request.PostForm.Get("message")),
 	)
 
-	r.ReportError(fmt.Errorf(errorString), http.StatusInternalServerError)
+	r.ReportError(fmt.Errorf(errorString), http.StatusInternalServerError, nil)
 }

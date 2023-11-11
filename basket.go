@@ -15,23 +15,39 @@ import (
 )
 
 const (
-	QueryUserBasket   = `SELECT "user".basket FROM "user" WHERE "user".wii_id = $1 LIMIT 1`
+	QueryUserBasket   = `SELECT "user".basket, "user".auth_key FROM "user" WHERE "user".wii_id = $1 LIMIT 1`
 	QueryUserForOrder = `SELECT "user".basket, "user".price, "user".order_id FROM "user" WHERE "user".wii_id = $1 LIMIT 1`
+	InsertAuthkey     = `UPDATE "user" SET auth_key = $1 WHERE wii_id = $2`
+	ClearBasket       = `UPDATE "user" SET order_id = $1, price = $2, basket = $3 WHERE wii_id = $4`
 )
 
 func authKey(r *Response) {
-	var areaCode string
-	row := pool.QueryRow(context.Background(), dominos.QueryUserAreaCode, r.request.Header.Get("X-WiiID"))
-	err := row.Scan(&areaCode)
+	authKeyValue, err := uuid.DefaultGenerator.NewV1()
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
-	// TODO: Append authKey to database
-	authKeyValue, err := uuid.DefaultGenerator.NewV1()
+	// First we query to determine if the user already has an auth key. If they do, reset the basket.
+	var _authKey string
+	row := pool.QueryRow(context.Background(), QueryUserBasket, r.request.Header.Get("X-WiiID"))
+	err = row.Scan(nil, &_authKey)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized)
+		r.ReportError(err, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if _authKey != "" {
+		_, err = pool.Exec(context.Background(), ClearBasket, "", "", "[]", r.request.Header.Get("X-WiiID"))
+		if err != nil {
+			r.ReportError(err, http.StatusInternalServerError, nil)
+			return
+		}
+	}
+
+	_, err = pool.Exec(context.Background(), InsertAuthkey, authKeyValue.String(), r.request.Header.Get("X-WiiID"))
+	if err != nil {
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
@@ -46,7 +62,7 @@ func authKey(r *Response) {
 func basketReset(r *Response) {
 	_, err := pool.Exec(context.Background(), `UPDATE "user" SET order_id = $1, price = $2, basket = $3 WHERE wii_id = $4`, "", "", "[]", r.request.Header.Get("X-WiiID"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 }
@@ -54,22 +70,22 @@ func basketReset(r *Response) {
 func basketDelete(r *Response) {
 	basketNumber, err := strconv.ParseInt(r.request.URL.Query().Get("basketNo"), 10, 64)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
 	var lastBasket string
 	row := pool.QueryRow(context.Background(), QueryUserBasket, r.request.Header.Get("X-WiiID"))
-	err = row.Scan(&lastBasket)
+	err = row.Scan(&lastBasket, nil)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
 	var actualBasket []map[string]any
 	err = json.Unmarshal([]byte(lastBasket), &actualBasket)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
@@ -78,13 +94,13 @@ func basketDelete(r *Response) {
 	// Convert basket to JSON then insert to database
 	jsonStr, err := json.Marshal(actualBasket)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
 	_, err = pool.Exec(context.Background(), `UPDATE "user" SET basket = $1 WHERE wii_id = $2`, jsonStr, r.request.Header.Get("X-WiiID"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 }
@@ -98,7 +114,7 @@ func basketAdd(r *Response) {
 	var lastBasket string
 	dom, err := dominos.NewDominos(pool, r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
@@ -131,21 +147,23 @@ func basketAdd(r *Response) {
 	// Create our basket
 	basket, err := dom.AddItem(shopCode, itemCode, quantity, toppings)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
 	row := pool.QueryRow(context.Background(), QueryUserBasket, r.request.Header.Get("X-WiiID"))
-	err = row.Scan(&lastBasket)
+
+	var _authKey string
+	err = row.Scan(&lastBasket, &_authKey)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
 	var actualBasket []map[string]any
 	err = json.Unmarshal([]byte(lastBasket), &actualBasket)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
@@ -154,46 +172,46 @@ func basketAdd(r *Response) {
 	// Convert basket to JSON then insert to database
 	jsonStr, err := json.Marshal(actualBasket)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
 	_, err = pool.Exec(context.Background(), `UPDATE "user" SET basket = $1 WHERE area_code = $2`, jsonStr, areaCode)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 }
 
 func basketList(r *Response) {
 	areaCode := r.request.URL.Query().Get("areaCode")
-	address := r.request.Header.Get("X-Address")
-	postalCode := r.request.Header.Get("X-Postalcode")
+	address := "132 Cornelius Parkway"
+	postalCode := "M6L2K5"
 
 	var basketStr string
 	row := pool.QueryRow(context.Background(), QueryUserBasket, r.request.Header.Get("X-WiiID"))
-	err := row.Scan(&basketStr)
+	err := row.Scan(&basketStr, nil)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
 	var basket []map[string]any
 	err = json.Unmarshal([]byte(basketStr), &basket)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
 	dom, err := dominos.NewDominos(pool, r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
 	user, err := dom.AddressLookup(postalCode, address)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
@@ -202,14 +220,14 @@ func basketList(r *Response) {
 
 	items, err := dom.GetPrice(user)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
 	// Add order ID and price to database
 	_, err = pool.Exec(context.Background(), `UPDATE "user" SET order_id = $1, price = $2 WHERE area_code = $3`, items.OrderId, fmt.Sprintf("%.2f", items.TotalPrice), areaCode)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
@@ -347,26 +365,26 @@ func orderDone(r *Response) {
 	row := pool.QueryRow(context.Background(), QueryUserForOrder, r.request.Header.Get("X-WiiID"))
 	err := row.Scan(&basketStr, &price, &orderId)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
 	var basket []map[string]any
 	err = json.Unmarshal([]byte(basketStr), &basket)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
 	dom, err := dominos.NewDominos(pool, r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
 	user, err := dom.AddressLookup(r.request.PostForm.Get("member[PostNo]"), r.request.PostForm.Get("member[Address5]"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
@@ -381,7 +399,7 @@ func orderDone(r *Response) {
 
 	// If the error does fail we should alert the user and allow for the basket to be cleared.
 	didError := false
-	err = dom.PlaceOrder(user)
+	// err = dom.PlaceOrder(user)
 	if err != nil {
 		PostDiscordWebhook(
 			"Performing error failed.",
@@ -405,7 +423,7 @@ func orderDone(r *Response) {
 	// Remove the order data from the database
 	_, err = pool.Exec(context.Background(), `UPDATE "user" SET order_id = $1, price = $2, basket = $3 WHERE wii_id = $4`, "", "", "[]", r.request.Header.Get("X-WiiID"))
 	if err != nil || didError {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 

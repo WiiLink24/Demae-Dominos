@@ -174,14 +174,28 @@ func PostDiscordWebhook(title, message, url string, color int) {
 
 // ReportError helps make errors nicer. First it logs the error to Sentry,
 // then writes a response for the server to send.
-func (r *Response) ReportError(err error, code int) {
+func (r *Response) ReportError(err error, code int, response *map[string]any) {
 	sentry.CaptureException(err)
 	log.Printf("An error has occurred: %s", aurora.Red(err.Error()))
 
 	var discord_id string
 	row := pool.QueryRow(context.Background(), QueryDiscordID, r.request.Header.Get("X-WiiID"))
 	_err := row.Scan(&discord_id)
-	sentry.CaptureException(_err)
+
+	// Re-marshal back into string
+	var b []byte
+	if response != nil {
+		b, _ = json.Marshal(*response)
+	}
+
+	sentry.WithScope(func(s *sentry.Scope) {
+		s.SetTag("Discord ID", discord_id)
+		if b != nil {
+			s.SetExtra("Response", string(b))
+		}
+
+		sentry.CaptureException(_err)
+	})
 
 	errorString := fmt.Sprintf("%s\nWii ID: %s\nDiscord ID: %s", err.Error(), r.wiiID, discord_id)
 	PostDiscordWebhook("An error has occurred in Demae Domino's!", errorString, config.ErrorWebhook, 16711711)

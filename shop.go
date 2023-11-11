@@ -9,26 +9,26 @@ import (
 func shopOne(r *Response) {
 	dom, err := dominos.NewDominos(pool, r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized)
+		r.ReportError(err, http.StatusUnauthorized, dom.JsonResponse())
 		return
 	}
 
 	shopData, err := dom.GetStoreInfo(r.request.URL.Query().Get("shopCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
 	shop := ShopOne{
 		CategoryCode:  CDATA{"01"},
-		Address:       CDATA{shopData.Address},
+		Address:       CDATA{"Nope"},
 		Information:   CDATA{shopData.Information},
 		Attention:     CDATA{"why"},
 		Amenity:       CDATA{"Domino's Pizza"},
 		MenuListCode:  CDATA{1},
 		Activate:      CDATA{"on"},
 		WaitTime:      CDATA{shopData.WaitTime},
-		TimeOrder:     CDATA{"n"},
+		TimeOrder:     CDATA{"y"},
 		Tel:           CDATA{shopData.Phone},
 		YoyakuMinDate: CDATA{1},
 		YoyakuMaxDate: CDATA{30},

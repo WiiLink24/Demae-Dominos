@@ -12,13 +12,13 @@ import (
 func menuList(r *Response) {
 	dom, err := dominos.NewDominos(pool, r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized)
+		r.ReportError(err, http.StatusUnauthorized, dom.JsonResponse())
 		return
 	}
 
 	menuData, err := dom.GetMenu(r.request.URL.Query().Get("shopCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
@@ -140,13 +140,13 @@ func itemList(r *Response) {
 	var items []NestedItem
 	dom, err := dominos.NewDominos(pool, r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized)
+		r.ReportError(err, http.StatusUnauthorized, dom.JsonResponse())
 		return
 	}
 
 	itemData, err := dom.GetItemList(r.request.URL.Query().Get("shopCode"), r.request.URL.Query().Get("menuCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
@@ -248,13 +248,13 @@ func itemOne(r *Response) {
 	dom, err := dominos.NewDominos(pool, r.request)
 	options, err := getToppings(r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
 	price, err := dom.GetFoodPrice(r.request.URL.Query().Get("shopCode"), r.request.URL.Query().Get("itemCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
 	}
 
