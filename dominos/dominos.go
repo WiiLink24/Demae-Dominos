@@ -32,6 +32,8 @@ func (d *Dominos) StoreLookup(zipCode, address string) ([]Store, error) {
 		return nil, err
 	}
 
+	d.jsonResponse = &jsonData
+
 	var stores []Store
 	for i, storeData := range jsonData["Stores"].([]any) {
 		if i == 5 {
@@ -79,6 +81,8 @@ func (d *Dominos) AddressLookup(zipCode, address string) (*User, error) {
 		return nil, err
 	}
 
+	d.jsonResponse = &jsonData
+
 	if jsonData["Status"].(float64) != 0 && jsonData["Status"].(float64) != 1 {
 		return nil, fmt.Errorf("domino's returned a status code of %.0f", jsonData["Status"].(float64))
 	}
@@ -116,11 +120,12 @@ func (d *Dominos) GetStoreInfo(storeId string) (*Store, error) {
 		return nil, err
 	}
 
+	d.jsonResponse = &jsonData
+
 	information := ""
 	if jsonData["LocationInfo"] != nil {
 		information = jsonData["LocationInfo"].(string)
 	}
-	
 
 	address := wordwrap.WrapString(strings.Replace(jsonData["AddressDescription"].(string), "\n", " ", -1), 38)
 	for i3, s := range strings.Split(address, "\n") {
@@ -152,6 +157,7 @@ func (d *Dominos) GetStoreInfo(storeId string) (*Store, error) {
 
 func (d *Dominos) GetMenu(storeId string) ([]MenuCategory, error) {
 	respChan := make(chan *http.Response)
+	fmt.Println(fmt.Sprintf("%s/power/store/%s/menu?lang=en&structured=true", d.apiURL, storeId))
 	go d.sendAsyncGET(fmt.Sprintf("%s/power/store/%s/menu?lang=en&structured=true", d.apiURL, storeId), respChan)
 
 	storeResponse := <-respChan
@@ -163,6 +169,8 @@ func (d *Dominos) GetMenu(storeId string) ([]MenuCategory, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	d.jsonResponse = &jsonData
 
 	var menus []MenuCategory
 	for _, menuData := range jsonData["Categorization"].(map[string]any)["Food"].(map[string]any)["Categories"].([]any) {
@@ -212,6 +220,8 @@ func (d *Dominos) GetItemList(storeId string, menuCode string) ([]Item, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	d.jsonResponse = &jsonData
 
 	var itemNames []string
 	for _, menuData := range jsonData["Categorization"].(map[string]any)["Food"].(map[string]any)["Categories"].([]any) {
@@ -307,6 +317,8 @@ func (d *Dominos) GetFoodPrice(storeId string, itemId string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	d.jsonResponse = &jsonData
 
 	return jsonData["Variants"].(map[string]any)[itemId].(map[string]any)["Price"].(string), nil
 }
@@ -436,6 +448,8 @@ func (d *Dominos) AddItem(storeId, itemId, quantity string, extraToppings []Topp
 		return nil, err
 	}
 
+	d.jsonResponse = &jsonData
+
 	defaultToppings := jsonData["Variants"].(map[string]any)[itemId].(map[string]any)["Tags"].(map[string]any)["DefaultToppings"].(string)
 	defaultSides := jsonData["Variants"].(map[string]any)[itemId].(map[string]any)["Tags"].(map[string]any)["DefaultSides"].(string)
 
@@ -509,6 +523,8 @@ func (d *Dominos) GetItemPrice(storeId, itemID string) (string, string, error) {
 		return "", "", err
 	}
 
+	d.jsonResponse = &jsonData
+
 	return jsonData["Variants"].(map[string]any)[itemID].(map[string]any)["Name"].(string), jsonData["Variants"].(map[string]any)[itemID].(map[string]any)["Price"].(string), nil
 }
 
@@ -572,6 +588,8 @@ func (d *Dominos) GetPrice(user *User) (*Basket, error) {
 		return nil, err
 	}
 
+	d.jsonResponse = &jsonData
+
 	payload["Order"].(map[string]any)["OrderID"] = jsonData["Order"].(map[string]any)["OrderID"].(string)
 	data, err = json.Marshal(payload)
 	if err != nil {
@@ -591,6 +609,8 @@ func (d *Dominos) GetPrice(user *User) (*Basket, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	d.jsonResponse = &jsonData
 
 	// Finally, retrieve order price.
 	payload["Order"].(map[string]any)["OrderID"] = jsonData["Order"].(map[string]any)["OrderID"].(string)
@@ -613,6 +633,8 @@ func (d *Dominos) GetPrice(user *User) (*Basket, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	d.jsonResponse = &jsonData
 
 	if jsonData["Status"].(float64) != 0 && jsonData["Status"].(float64) != 1 {
 		return nil, fmt.Errorf("domino's returned a status code of %.0f\nError: %s", jsonData["Status"].(float64), jsonData["StatusItems"].([]any)[0].(map[string]any)["Code"].(string))
@@ -730,6 +752,8 @@ func (d *Dominos) PlaceOrder(info *User) error {
 	if err != nil {
 		return err
 	}
+
+	d.jsonResponse = &jsonData
 
 	if jsonData["Status"].(float64) != 0 && jsonData["Status"].(float64) != 1 {
 		return fmt.Errorf("domino's returned a status code of %.0f", jsonData["Status"].(float64))

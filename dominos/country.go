@@ -31,6 +31,10 @@ type Dominos struct {
 	jsonResponse *map[string]any
 }
 
+func (d *Dominos) JsonResponse() *map[string]any {
+	return d.jsonResponse
+}
+
 func NewDominos(db *pgxpool.Pool, r *http.Request) (*Dominos, error) {
 	d := Dominos{}
 	areaCode := r.URL.Query().Get("areaCode")
