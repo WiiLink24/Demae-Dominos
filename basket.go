@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	DoesAuthKeyExist  = `SELECT EXISTS(SELECT 1 FROM "user" WHERE "user".wii_id = $1 AND "user".auth_key IS NOT NULL)`
 	QueryUserBasket   = `SELECT "user".basket, "user".auth_key FROM "user" WHERE "user".wii_id = $1 LIMIT 1`
 	QueryUserForOrder = `SELECT "user".basket, "user".price, "user".order_id FROM "user" WHERE "user".wii_id = $1 LIMIT 1`
 	InsertAuthkey     = `UPDATE "user" SET auth_key = $1 WHERE wii_id = $2`
@@ -29,15 +30,15 @@ func authKey(r *Response) {
 	}
 
 	// First we query to determine if the user already has an auth key. If they do, reset the basket.
-	var _authKey string
-	row := pool.QueryRow(context.Background(), QueryUserBasket, r.request.Header.Get("X-WiiID"))
-	err = row.Scan(nil, &_authKey)
+	var authExists bool
+	row := pool.QueryRow(context.Background(), DoesAuthKeyExist, r.request.Header.Get("X-WiiID"))
+	err = row.Scan(&authExists)
 	if err != nil {
 		r.ReportError(err, http.StatusInternalServerError, nil)
 		return
 	}
 
-	if _authKey != "" {
+	if authExists {
 		_, err = pool.Exec(context.Background(), ClearBasket, "", "", "[]", r.request.Header.Get("X-WiiID"))
 		if err != nil {
 			r.ReportError(err, http.StatusInternalServerError, nil)
@@ -185,8 +186,8 @@ func basketAdd(r *Response) {
 
 func basketList(r *Response) {
 	areaCode := r.request.URL.Query().Get("areaCode")
-	address := "132 Cornelius Parkway"
-	postalCode := "M6L2K5"
+	address := r.request.Header.Get("X-Address")
+	postalCode := r.request.Header.Get("X-Postalcode")
 
 	var basketStr string
 	row := pool.QueryRow(context.Background(), QueryUserBasket, r.request.Header.Get("X-WiiID"))

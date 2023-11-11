@@ -33,7 +33,7 @@ func categoryList(r *Response) {
 		return
 	}
 
-	stores, err := dom.StoreLookup("M6L2K7", "132 Cornelius Parkway")
+	stores, err := dom.StoreLookup(r.request.Header.Get("X-Postalcode"), r.request.Header.Get("X-Address"))
 	if err != nil {
 		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
 		return
@@ -52,7 +52,7 @@ func categoryList(r *Response) {
 			ShopCode:    CDATA{storeData.StoreID},
 			HomeCode:    CDATA{1},
 			Name:        CDATA{"Domino's Pizza"},
-			Catchphrase: CDATA{"Nope"},
+			Catchphrase: CDATA{storeData.Address},
 			MinPrice:    CDATA{shopData.MinPrice},
 			Yoyaku:      CDATA{1},
 			Activate:    CDATA{"on"},
