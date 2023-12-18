@@ -3,6 +3,7 @@ module DemaeDominos
 go 1.19
 
 require (
+	github.com/DataDog/datadog-go/v5 v5.0.2
 	github.com/getsentry/sentry-go v0.15.0
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/jackc/pgx/v4 v4.17.2
@@ -11,15 +12,13 @@ require (
 	github.com/remizovm/geonames v0.1.0
 	golang.org/x/exp v0.0.0-20221114191408-850992195362
 	golang.org/x/image v0.1.0
-	golang.org/x/text v0.4.0
-	googlemaps.github.io/maps v1.3.2
+	golang.org/x/text v0.14.0
 	gopkg.in/DataDog/dd-trace-go.v1 v1.43.1
 )
 
 require (
 	github.com/DataDog/datadog-agent/pkg/obfuscate v0.0.0-20211129110424-6491aa3bf583 // indirect
 	github.com/DataDog/datadog-go v4.8.2+incompatible // indirect
-	github.com/DataDog/datadog-go/v5 v5.0.2 // indirect
 	github.com/DataDog/gostackparse v0.5.0 // indirect
 	github.com/DataDog/sketches-go v1.2.1 // indirect
 	github.com/Microsoft/go-winio v0.5.1 // indirect
@@ -42,11 +41,10 @@ require (
 	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/tinylib/msgp v1.1.2 // indirect
-	go.opencensus.io v0.22.4 // indirect
 	go4.org/intern v0.0.0-20211027215823-ae77deb06f29 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760 // indirect
-	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be // indirect
-	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/crypto v0.17.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
