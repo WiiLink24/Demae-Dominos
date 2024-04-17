@@ -400,7 +400,7 @@ func orderDone(r *Response) {
 
 	// If the error does fail we should alert the user and allow for the basket to be cleared.
 	didError := false
-	// err = dom.PlaceOrder(user)
+	err = dom.PlaceOrder(user)
 	if err != nil {
 		PostDiscordWebhook(
 			"Performing error failed.",

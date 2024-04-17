@@ -117,39 +117,7 @@ func shopOne(r *Response) {
 					},
 					KVFieldWChildren{
 						XMLName: xml.Name{Local: "selList"},
-						Value: []any{
-							KVFieldWChildren{
-								XMLName: xml.Name{Local: "values"},
-								Value: []any{
-									KVFieldWChildren{
-										XMLName: xml.Name{Local: "one"},
-										Value: []any{
-											KVField{
-												XMLName: xml.Name{Local: "id"},
-												Value:   "1",
-											},
-											KVField{
-												XMLName: xml.Name{Local: "name"},
-												Value:   "n",
-											},
-										},
-									},
-									KVFieldWChildren{
-										XMLName: xml.Name{Local: "two"},
-										Value: []any{
-											KVField{
-												XMLName: xml.Name{Local: "id"},
-												Value:   "2",
-											},
-											KVField{
-												XMLName: xml.Name{Local: "name"},
-												Value:   "n",
-											},
-										},
-									},
-								},
-							},
-						},
+						Value:   []any{},
 					},
 					KVFieldWChildren{
 						XMLName: xml.Name{Local: "status"},
