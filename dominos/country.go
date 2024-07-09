@@ -29,6 +29,7 @@ type Dominos struct {
 	apiURL       string
 	imageURL     string
 	jsonResponse *map[string]any
+	placeOrder   bool
 }
 
 func (d *Dominos) JsonResponse() *map[string]any {
@@ -36,7 +37,7 @@ func (d *Dominos) JsonResponse() *map[string]any {
 }
 
 func NewDominos(db *pgxpool.Pool, r *http.Request) (*Dominos, error) {
-	d := Dominos{}
+	d := Dominos{placeOrder: false}
 	areaCode := r.URL.Query().Get("areaCode")
 
 	if areaCode == "" {

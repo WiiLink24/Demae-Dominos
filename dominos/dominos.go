@@ -673,6 +673,7 @@ func (d *Dominos) GetPrice(user *User) (*Basket, error) {
 
 func (d *Dominos) PlaceOrder(info *User) error {
 	payload := map[string]any{}
+	payload["Status"] = 0
 	payload["Order"] = map[string]any{
 		"Address": map[string]any{
 			"Street":               info.Street,
@@ -682,52 +683,51 @@ func (d *Dominos) PlaceOrder(info *User) error {
 			"Type":                 info.LocationType,
 			"StreetName":           info.StreetName,
 			"StreetNumber":         info.StreetNumber,
-			"DeliveryInstructions": "None",
+			"DeliveryInstructions": "Do not process order. Testing web services",
 		},
-		"Coupons":      []any{},
-		"CustomerID":   "",
-		"Email":        info.Email,
-		"Extension":    "",
-		"FirstName":    info.FirstName,
-		"LastName":     info.LastName,
-		"LanguageCode": "en",
-		"OrderChannel": "OLO",
-		"OrderID":      info.OrderId,
-		"OrderMethod":  "Web",
-		"OrderTaker":   nil,
+		"EstimatedWaitMinutes": "21-31",
+		"Channel":              "Mobile",
+		"DataWarehouseUpdate":  false,
+		"Coupons":              []any{},
+		"CustomerID":           "",
+		"Email":                info.Email,
+		"Extension":            "",
+		"FirstName":            info.FirstName,
+		"LastName":             info.LastName,
+		"LanguageCode":         "en",
+		"OrderChannel":         "OLO",
+		"OrderID":              info.OrderId,
+		"OrderMethod":          "Web",
+		"OrderTaker":           "power",
+		"OrderTakeSeconds":     0,
 		"Payments": []map[string]any{
 			{
-				"Type":            "Cash",
-				"Amount":          info.Price,
-				"Number":          "",
-				"CardType":        "",
-				"Expiration":      "",
-				"SecurityCode":    "",
-				"PostalCode":      "",
-				"ProviderID":      "",
-				"PaymentMethodID": "",
-				"OTP":             "",
-				"gpmPaymentType":  "",
+				"Type":   "Cash",
+				"Amount": info.Price,
 			},
 		},
-		"Phone":                 info.PhoneNumber,
-		"PhonePrefix":           "",
-		"Products":              info.Products,
-		"ServiceMethod":         "Delivery",
-		"SourceOrganizationURI": "order.dominos.com",
-		"StoreID":               info.StoreId,
-		"Tags":                  map[string]any{},
-		"Version":               "1.0",
-		"NoCombine":             true,
-		"Partners":              map[string]any{},
-		"HotspotsLite":          true,
-		"OrderInfoCollection":   []any{},
+		"PendingOrder":           false,
+		"PlaceOrderMs":           0,
+		"Platform":               "androidNativeApp",
+		"PriceOrderMs":           0,
+		"Phone":                  info.PhoneNumber,
+		"PhonePrefix":            "",
+		"Products":               info.Products,
+		"ServiceMethod":          "Delivery",
+		"SourceOrganizationURI":  "android.dominos.com",
+		"StoreID":                info.StoreId,
+		"Tags":                   map[string]any{},
+		"Version":                "1.0",
+		"Status":                 0,
+		"NoCombine":              true,
+		"Partners":               map[string]any{},
+		"HotspotsLite":           true,
+		"OrderInfoCollection":    []any{},
+		"TestOrderFlagCCProcess": false,
 		"metaData": map[string]any{
-			"orderFunnel":        "payments",
-			"calculateNutrition": "true",
-			"isDomChat":          0,
-			"ABTests":            []any{},
-			"contactless":        true,
+			"PiePassPickup":      false,
+			"calculateNutrition": true,
+			"contactless":        false,
 		},
 	}
 
@@ -740,6 +740,7 @@ func (d *Dominos) PlaceOrder(info *User) error {
 		panic(err)
 	}
 
+	d.placeOrder = true
 	placeOrderChan := make(chan *http.Response)
 	go d.sendAsyncPOST(fmt.Sprintf("%s/power/place-order", d.apiURL), data, placeOrderChan)
 
@@ -788,14 +789,18 @@ func (d *Dominos) setHeaders(req *http.Request) {
 }
 
 func (d *Dominos) setPostHeaders(req *http.Request) {
-	req.Header.Set("Accept", "application/json, text/javascript, */*; q=0.01")
+	req.Header.Set("Accept", "text/plain, application/json, application/json, text/plain, */*")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Origin", d.apiURL)
 	req.Header.Set("Referer", fmt.Sprintf("%s/assets/build/xdomain/proxy.html", d.apiURL))
-	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set("Connection", "Close")
 	req.Header.Set("Market", string(d.country))
 	req.Header.Set("DPZ-Language", "en")
 	req.Header.Set("DPZ-Market", string(d.country))
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15")
+	req.Header.Set("User-Agent", "DominosAndroid/11.5.0 (Android 11; OnePlus/ONEPLUS A3003; en)")
+
+	if d.placeOrder {
+		req.Header.Set("DPZ-Source", "DSSPlaceOrder")
+	}
 }
