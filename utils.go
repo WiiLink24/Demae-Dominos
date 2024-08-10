@@ -6,25 +6,47 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/WiiLink24/nwc24"
 	"github.com/getsentry/sentry-go"
+	"github.com/google/uuid"
 	"github.com/logrusorgru/aurora/v4"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 )
 
 const QueryDiscordID = `SELECT "user".discord_id FROM "user" WHERE "user".wii_id = $1 LIMIT 1`
 
 func NewResponse(r *http.Request, w *http.ResponseWriter, xmlType XMLType) *Response {
+	wiiNumber, err := strconv.ParseUint(r.Header.Get("X-WiiNo"), 10, 64)
+	if err != nil {
+		// Failed to parse Wii Number or invalid integer
+		(*w).WriteHeader(http.StatusBadRequest)
+		return nil
+	}
+
+	number := nwc24.LoadWiiNumber(wiiNumber)
+	if !number.CheckWiiNumber() {
+		// Bad Wii Number
+		(*w).WriteHeader(http.StatusBadRequest)
+		return nil
+	}
+
 	return &Response{
 		ResponseFields: KVFieldWChildren{
 			XMLName: xml.Name{Local: "response"},
 			Value:   nil,
 		},
-		wiiID:               r.Header.Get("X-WiiID"),
+		wiiNumber:           number,
 		request:             r,
 		writer:              w,
 		isMultipleRootNodes: xmlType == 1,
 	}
+}
+
+func (r *Response) GetHollywoodId() string {
+	return strconv.Itoa(int(r.wiiNumber.GetHollywoodID()))
 }
 
 // AddCustomType adds a given key by name to a specified structure.
@@ -174,30 +196,27 @@ func PostDiscordWebhook(title, message, url string, color int) {
 
 // ReportError helps make errors nicer. First it logs the error to Sentry,
 // then writes a response for the server to send.
-func (r *Response) ReportError(err error, code int, response *map[string]any) {
-	sentry.CaptureException(err)
-	log.Printf("An error has occurred: %s", aurora.Red(err.Error()))
-
-	var discord_id string
-	row := pool.QueryRow(context.Background(), QueryDiscordID, r.request.Header.Get("X-WiiID"))
-	_err := row.Scan(&discord_id)
-
-	// Re-marshal back into string
-	var b []byte
-	if response != nil {
-		b, _ = json.Marshal(*response)
+func (r *Response) ReportError(err error, code int) {
+	var discordId string
+	row := pool.QueryRow(context.Background(), QueryDiscordID, r.wiiNumber.GetHollywoodID())
+	_err := row.Scan(&discordId)
+	if _err != nil {
+		// We assume Discord ID doesn't exist because we will get an error elsewhere if the db is down.
+		// UUID's are generated for each error case, so we have a unique identifier
+		discordId = fmt.Sprintf("Not Registered: %s", uuid.New().String())
 	}
 
-	sentry.WithScope(func(s *sentry.Scope) {
-		s.SetTag("Discord ID", discord_id)
-		if b != nil {
-			s.SetExtra("Response", string(b))
-		}
+	// Write the JSON Dominos sent us to the system.
+	_ = os.WriteFile(fmt.Sprintf("errors/%s_%s.json", r.request.URL.Path, discordId), r.dominos.GetResponse(), 0664)
 
-		sentry.CaptureException(_err)
+	sentry.WithScope(func(s *sentry.Scope) {
+		s.SetTag("Discord ID", discordId)
+		sentry.CaptureException(err)
 	})
 
-	errorString := fmt.Sprintf("%s\nWii ID: %s\nDiscord ID: %s", err.Error(), r.wiiID, discord_id)
+	log.Printf("An error has occurred: %s", aurora.Red(err.Error()))
+
+	errorString := fmt.Sprintf("%s\nWii ID: %d\nDiscord ID: %s", err.Error(), r.wiiNumber.GetHollywoodID(), discordId)
 	PostDiscordWebhook("An error has occurred in Demae Domino's!", errorString, config.ErrorWebhook, 16711711)
 
 	// Write response

@@ -27,24 +27,27 @@ func documentTemplate(r *Response) {
 }
 
 func categoryList(r *Response) {
-	dom, err := dominos.NewDominos(pool, r.request)
+	var err error
+	r.dominos, err = dominos.NewDominos(r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized, dom.JsonResponse())
+		r.ReportError(err, http.StatusUnauthorized)
 		return
 	}
 
-	stores, err := dom.StoreLookup(r.request.Header.Get("X-Postalcode"), r.request.Header.Get("X-Address"))
+	postalCode := r.request.Header.Get("X-Postalcode")
+	addresss := r.request.Header.Get("X-Address")
+	stores, err := r.dominos.StoreLookup(postalCode, addresss)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
+		r.ReportError(err, http.StatusInternalServerError)
 		return
 	}
 
 	var storesXML []BasicShop
 	for _, storeData := range stores {
 		// We need to get the actual min price
-		shopData, err := dom.GetStoreInfo(storeData.StoreID)
+		shopData, err := r.dominos.GetStoreInfo(storeData.StoreID)
 		if err != nil {
-			r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
+			r.ReportError(err, http.StatusInternalServerError)
 			return
 		}
 
@@ -173,5 +176,5 @@ func inquiryDone(r *Response) {
 		shiftJisDecoder(r.request.PostForm.Get("message")),
 	)
 
-	r.ReportError(fmt.Errorf(errorString), http.StatusInternalServerError, nil)
+	r.ReportError(fmt.Errorf(errorString), http.StatusInternalServerError)
 }

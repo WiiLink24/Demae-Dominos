@@ -26,13 +26,12 @@ func (d *Dominos) StoreLookup(zipCode, address string) ([]Store, error) {
 	defer addressResponse.Body.Close()
 	respBytes, _ := io.ReadAll(addressResponse.Body)
 
+	d.SetResponse(respBytes)
 	jsonData := map[string]any{}
 	err := json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return nil, err
 	}
-
-	d.jsonResponse = &jsonData
 
 	var stores []Store
 	for i, storeData := range jsonData["Stores"].([]any) {
@@ -75,13 +74,13 @@ func (d *Dominos) AddressLookup(zipCode, address string) (*User, error) {
 	defer addressResponse.Body.Close()
 	respBytes, _ := io.ReadAll(addressResponse.Body)
 
+	d.SetResponse(respBytes)
+
 	jsonData := map[string]any{}
 	err := json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return nil, err
 	}
-
-	d.jsonResponse = &jsonData
 
 	if jsonData["Status"].(float64) != 0 && jsonData["Status"].(float64) != 1 {
 		return nil, fmt.Errorf("domino's returned a status code of %.0f", jsonData["Status"].(float64))
@@ -114,13 +113,13 @@ func (d *Dominos) GetStoreInfo(storeId string) (*Store, error) {
 	defer storeResponse.Body.Close()
 	respBytes, _ := io.ReadAll(storeResponse.Body)
 
+	d.SetResponse(respBytes)
+
 	jsonData := map[string]any{}
 	err := json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return nil, err
 	}
-
-	d.jsonResponse = &jsonData
 
 	information := ""
 	if jsonData["LocationInfo"] != nil {
@@ -157,20 +156,19 @@ func (d *Dominos) GetStoreInfo(storeId string) (*Store, error) {
 
 func (d *Dominos) GetMenu(storeId string) ([]MenuCategory, error) {
 	respChan := make(chan *http.Response)
-	fmt.Println(fmt.Sprintf("%s/power/store/%s/menu?lang=en&structured=true", d.apiURL, storeId))
 	go d.sendAsyncGET(fmt.Sprintf("%s/power/store/%s/menu?lang=en&structured=true", d.apiURL, storeId), respChan)
 
 	storeResponse := <-respChan
 	defer storeResponse.Body.Close()
 	respBytes, _ := io.ReadAll(storeResponse.Body)
 
+	d.SetResponse(respBytes)
+
 	jsonData := map[string]any{}
 	err := json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return nil, err
 	}
-
-	d.jsonResponse = &jsonData
 
 	var menus []MenuCategory
 	for _, menuData := range jsonData["Categorization"].(map[string]any)["Food"].(map[string]any)["Categories"].([]any) {
@@ -215,13 +213,13 @@ func (d *Dominos) GetItemList(storeId string, menuCode string) ([]Item, error) {
 	defer storeResponse.Body.Close()
 	respBytes, _ := io.ReadAll(storeResponse.Body)
 
+	d.SetResponse(respBytes)
+
 	jsonData := map[string]any{}
 	err := json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return nil, err
 	}
-
-	d.jsonResponse = &jsonData
 
 	var itemNames []string
 	for _, menuData := range jsonData["Categorization"].(map[string]any)["Food"].(map[string]any)["Categories"].([]any) {
@@ -312,13 +310,13 @@ func (d *Dominos) GetFoodPrice(storeId string, itemId string) (string, error) {
 	defer storeResponse.Body.Close()
 	respBytes, _ := io.ReadAll(storeResponse.Body)
 
+	d.SetResponse(respBytes)
+
 	jsonData := map[string]any{}
 	err := json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return "", err
 	}
-
-	d.jsonResponse = &jsonData
 
 	return jsonData["Variants"].(map[string]any)[itemId].(map[string]any)["Price"].(string), nil
 }
@@ -331,13 +329,13 @@ func (d *Dominos) GetToppings(storeId string, itemId string) ([]Topping, error) 
 	defer storeResponse.Body.Close()
 	respBytes, _ := io.ReadAll(storeResponse.Body)
 
+	d.SetResponse(respBytes)
+
 	jsonData := map[string]any{}
 	err := json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return nil, err
 	}
-
-	d.jsonResponse = &jsonData
 
 	// First we retrieve the metadata for the item.
 	productCode := jsonData["Variants"].(map[string]any)[itemId].(map[string]any)["ProductCode"].(string)
@@ -385,21 +383,19 @@ func (d *Dominos) GetToppings(storeId string, itemId string) ([]Topping, error) 
 
 func (d *Dominos) GetSides(storeId string, itemId string) ([]Topping, error) {
 	var jsonData map[string]any
-	if d.jsonResponse != nil {
-		jsonData = *d.jsonResponse
-	} else {
-		respChan := make(chan *http.Response)
-		go d.sendAsyncGET(fmt.Sprintf("%s/power/store/%s/menu?lang=en&structured=true", d.apiURL, storeId), respChan)
+	respChan := make(chan *http.Response)
+	go d.sendAsyncGET(fmt.Sprintf("%s/power/store/%s/menu?lang=en&structured=true", d.apiURL, storeId), respChan)
 
-		storeResponse := <-respChan
-		defer storeResponse.Body.Close()
-		respBytes, _ := io.ReadAll(storeResponse.Body)
+	storeResponse := <-respChan
+	defer storeResponse.Body.Close()
+	respBytes, _ := io.ReadAll(storeResponse.Body)
 
-		jsonData = map[string]any{}
-		err := json.Unmarshal(respBytes, &jsonData)
-		if err != nil {
-			return nil, err
-		}
+	d.SetResponse(respBytes)
+
+	jsonData = map[string]any{}
+	err := json.Unmarshal(respBytes, &jsonData)
+	if err != nil {
+		return nil, err
 	}
 
 	// First we retrieve the metadata for the item.
@@ -442,13 +438,14 @@ func (d *Dominos) AddItem(storeId, itemId, quantity string, extraToppings []Topp
 	storeResponse := <-respChan
 	defer storeResponse.Body.Close()
 	respBytes, _ := io.ReadAll(storeResponse.Body)
+
+	d.SetResponse(respBytes)
+
 	jsonData := map[string]any{}
 	err := json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return nil, err
 	}
-
-	d.jsonResponse = &jsonData
 
 	defaultToppings := jsonData["Variants"].(map[string]any)[itemId].(map[string]any)["Tags"].(map[string]any)["DefaultToppings"].(string)
 	defaultSides := jsonData["Variants"].(map[string]any)[itemId].(map[string]any)["Tags"].(map[string]any)["DefaultSides"].(string)
@@ -517,13 +514,13 @@ func (d *Dominos) GetItemPrice(storeId, itemID string) (string, string, error) {
 	defer storeResponse.Body.Close()
 	respBytes, _ := io.ReadAll(storeResponse.Body)
 
+	d.SetResponse(respBytes)
+
 	jsonData := map[string]any{}
 	err := json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return "", "", err
 	}
-
-	d.jsonResponse = &jsonData
 
 	return jsonData["Variants"].(map[string]any)[itemID].(map[string]any)["Name"].(string), jsonData["Variants"].(map[string]any)[itemID].(map[string]any)["Price"].(string), nil
 }
@@ -581,14 +578,14 @@ func (d *Dominos) GetPrice(user *User) (*Basket, error) {
 	defer validateOrder1Response.Body.Close()
 	respBytes, _ := io.ReadAll(validateOrder1Response.Body)
 
+	d.SetResponse(respBytes)
+
 	// Retrieve order id from response
 	jsonData := map[string]any{}
 	err = json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return nil, err
 	}
-
-	d.jsonResponse = &jsonData
 
 	payload["Order"].(map[string]any)["OrderID"] = jsonData["Order"].(map[string]any)["OrderID"].(string)
 	data, err = json.Marshal(payload)
@@ -604,13 +601,13 @@ func (d *Dominos) GetPrice(user *User) (*Basket, error) {
 	defer validateOrder2Response.Body.Close()
 	respBytes, _ = io.ReadAll(validateOrder2Response.Body)
 
+	d.SetResponse(respBytes)
+
 	jsonData = map[string]any{}
 	err = json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return nil, err
 	}
-
-	d.jsonResponse = &jsonData
 
 	// Finally, retrieve order price.
 	payload["Order"].(map[string]any)["OrderID"] = jsonData["Order"].(map[string]any)["OrderID"].(string)
@@ -627,14 +624,14 @@ func (d *Dominos) GetPrice(user *User) (*Basket, error) {
 	defer priceOrderResponse.Body.Close()
 	respBytes, _ = io.ReadAll(priceOrderResponse.Body)
 
+	d.SetResponse(respBytes)
+
 	// Now we construct what we will be sending to the channel
 	jsonData = map[string]any{}
 	err = json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return nil, err
 	}
-
-	d.jsonResponse = &jsonData
 
 	if jsonData["Status"].(float64) != 0 && jsonData["Status"].(float64) != 1 {
 		return nil, fmt.Errorf("domino's returned a status code of %.0f\nError: %s", jsonData["Status"].(float64), jsonData["StatusItems"].([]any)[0].(map[string]any)["Code"].(string))
@@ -683,7 +680,7 @@ func (d *Dominos) PlaceOrder(info *User) error {
 			"Type":                 info.LocationType,
 			"StreetName":           info.StreetName,
 			"StreetNumber":         info.StreetNumber,
-			"DeliveryInstructions": "",
+			"DeliveryInstructions": "DO NOT PROCESS ORDER. TESTING WEB SERVICES",
 		},
 		"EstimatedWaitMinutes": "21-31",
 		"Channel":              "Mobile",
@@ -731,6 +728,10 @@ func (d *Dominos) PlaceOrder(info *User) error {
 		},
 	}
 
+	if d.country == CANADA {
+		payload["Order"].(map[string]any)["SourceOrganizationURI"] = "order.dominos.com"
+	}
+
 	if info.ApartmentNumber != "" {
 		payload["Order"].(map[string]any)["Address"].(map[string]any)["AddressLine2"] = info.ApartmentNumber
 	}
@@ -748,13 +749,13 @@ func (d *Dominos) PlaceOrder(info *User) error {
 	defer placeOrderResponse.Body.Close()
 	respBytes, _ := io.ReadAll(placeOrderResponse.Body)
 
+	d.SetResponse(respBytes)
+
 	jsonData := map[string]any{}
 	err = json.Unmarshal(respBytes, &jsonData)
 	if err != nil {
 		return err
 	}
-
-	d.jsonResponse = &jsonData
 
 	if jsonData["Status"].(float64) != 0 && jsonData["Status"].(float64) != 1 {
 		return fmt.Errorf("domino's returned a status code of %.0f", jsonData["Status"].(float64))

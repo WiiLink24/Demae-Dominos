@@ -7,15 +7,16 @@ import (
 )
 
 func shopOne(r *Response) {
-	dom, err := dominos.NewDominos(pool, r.request)
+	var err error
+	r.dominos, err = dominos.NewDominos(r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized, dom.JsonResponse())
+		r.ReportError(err, http.StatusUnauthorized)
 		return
 	}
 
-	shopData, err := dom.GetStoreInfo(r.request.URL.Query().Get("shopCode"))
+	shopData, err := r.dominos.GetStoreInfo(r.request.URL.Query().Get("shopCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
+		r.ReportError(err, http.StatusInternalServerError)
 		return
 	}
 
@@ -164,7 +165,4 @@ func shopOne(r *Response) {
 
 	// Strip the parent response tag
 	r.ResponseFields = shop
-
-	// For fun log a user accessed a shop
-	_ = dataDog.Incr("demae-dominos.store_accessed", nil, 1)
 }

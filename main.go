@@ -2,20 +2,13 @@ package main
 
 import (
 	"context"
-	crypto "crypto/rand"
 	"encoding/xml"
 	"fmt"
-	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/getsentry/sentry-go"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/remizovm/geonames"
 	"github.com/remizovm/geonames/models"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
-	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 	"log"
-	"math"
-	"math/big"
-	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -23,7 +16,6 @@ import (
 
 var pool *pgxpool.Pool
 var geonameCities map[int]*models.Feature
-var dataDog *statsd.Client
 var config *Config
 
 func checkError(err error) {
@@ -49,17 +41,6 @@ func main() {
 	checkError(err)
 	defer sentry.Flush(2 * time.Second)
 
-	// Initialize Datadog
-	tracer.Start(tracer.WithService("demae-dominos"), tracer.WithAgentAddr("127.0.0.1:8126"))
-	defer tracer.Stop()
-
-	err = profiler.Start(profiler.WithService("demae-dominos"))
-	checkError(err)
-	defer profiler.Stop()
-
-	dataDog, err = statsd.New("127.0.0.1:8125")
-	checkError(err)
-
 	// Initialize database
 	dbString := fmt.Sprintf("postgres://%s:%s@%s/%s", config.SQLUser, config.SQLPass, config.SQLAddress, config.SQLDB)
 	dbConf, err := pgxpool.ParseConfig(dbString)
@@ -74,11 +55,6 @@ func main() {
 	client := geonames.Client{}
 	geonameCities, err = client.Cities15000()
 	checkError(err)
-
-	// Seed random number generator
-	seed, err := crypto.Int(crypto.Reader, big.NewInt(math.MaxInt64))
-	checkError(err)
-	rand.Seed(seed.Int64())
 
 	// Finally, initialize the HTTP server
 	fmt.Printf("Starting HTTP connection (%s)...\nNot using the usual port for HTTP?\nBe sure to use a proxy, otherwise the Wii can't connect!\n", config.Address)
