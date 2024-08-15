@@ -258,7 +258,7 @@ func areaList(r *Response) {
 	newAreaCode := GenerateAreaCode(areaCode)
 	_, err := pool.Exec(context.Background(), InsertUser, newAreaCode, r.request.Header.Get("X-WiiID"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError, nil)
+		r.ReportError(err, http.StatusInternalServerError)
 		return
 	}
 

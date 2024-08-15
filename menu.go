@@ -10,15 +10,16 @@ import (
 )
 
 func menuList(r *Response) {
-	dom, err := dominos.NewDominos(pool, r.request)
+	var err error
+	r.dominos, err = dominos.NewDominos(r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized, dom.JsonResponse())
+		r.ReportError(err, http.StatusUnauthorized)
 		return
 	}
 
-	menuData, err := dom.GetMenu(r.request.URL.Query().Get("shopCode"))
+	menuData, err := r.dominos.GetMenu(r.request.URL.Query().Get("shopCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
+		r.ReportError(err, http.StatusInternalServerError)
 		return
 	}
 
@@ -138,15 +139,16 @@ func menuList(r *Response) {
 
 func itemList(r *Response) {
 	var items []NestedItem
-	dom, err := dominos.NewDominos(pool, r.request)
+	var err error
+	r.dominos, err = dominos.NewDominos(r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized, dom.JsonResponse())
+		r.ReportError(err, http.StatusUnauthorized)
 		return
 	}
 
-	itemData, err := dom.GetItemList(r.request.URL.Query().Get("shopCode"), r.request.URL.Query().Get("menuCode"))
+	itemData, err := r.dominos.GetItemList(r.request.URL.Query().Get("shopCode"), r.request.URL.Query().Get("menuCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
+		r.ReportError(err, http.StatusInternalServerError)
 		return
 	}
 
@@ -245,16 +247,17 @@ func itemList(r *Response) {
 }
 
 func itemOne(r *Response) {
-	dom, err := dominos.NewDominos(pool, r.request)
+	var err error
+	r.dominos, err = dominos.NewDominos(r.request)
 	options, err := getToppings(r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
+		r.ReportError(err, http.StatusInternalServerError)
 		return
 	}
 
-	price, err := dom.GetFoodPrice(r.request.URL.Query().Get("shopCode"), r.request.URL.Query().Get("itemCode"))
+	price, err := r.dominos.GetFoodPrice(r.request.URL.Query().Get("shopCode"), r.request.URL.Query().Get("itemCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError, dom.JsonResponse())
+		r.ReportError(err, http.StatusInternalServerError)
 		return
 	}
 

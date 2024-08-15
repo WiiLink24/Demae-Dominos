@@ -13,7 +13,7 @@ the selection sections, but pull available toppings from the API.
 */
 
 func getToppings(r *http.Request) ([]any, error) {
-	dom, err := dominos.NewDominos(pool, r)
+	dom, err := dominos.NewDominos(r)
 	if err != nil {
 		return nil, err
 	}

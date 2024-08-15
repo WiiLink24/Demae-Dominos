@@ -1,7 +1,9 @@
 package main
 
 import (
+	"DemaeDominos/dominos"
 	"encoding/xml"
+	"github.com/WiiLink24/nwc24"
 	"net/http"
 )
 
@@ -28,10 +30,11 @@ type Config struct {
 type Response struct {
 	ResponseFields      any
 	hasError            bool
-	wiiID               string
+	wiiNumber           nwc24.WiiNumber
 	request             *http.Request
 	writer              *http.ResponseWriter
 	isMultipleRootNodes bool
+	dominos             *dominos.Dominos
 }
 
 // KVField represents an individual node in form of <XMLName>Contents</XMLName>.

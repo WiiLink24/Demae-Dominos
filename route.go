@@ -61,7 +61,7 @@ func (r *Route) Handle() http.Handler {
 		if strings.Contains(req.URL.Path, "itemimg") {
 			splitUrl := strings.Split(req.URL.Path, "/")
 			imageName := splitUrl[len(splitUrl)-1]
-			dom, err := dominos.NewDominos(pool, req)
+			dom, err := dominos.NewDominos(req)
 			if err != nil {
 				// Most likely the user is not registered.
 				printError(w, err.Error(), http.StatusUnauthorized)
@@ -114,6 +114,11 @@ func (r *Route) Handle() http.Handler {
 		}
 
 		resp := NewResponse(req, &w, action.XMLType)
+		if resp == nil {
+			// Already wrote the error in the caller.
+			return
+		}
+
 		action.Callback(resp)
 
 		if resp.hasError {
