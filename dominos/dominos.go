@@ -47,10 +47,16 @@ func (d *Dominos) StoreLookup(zipCode, address string) ([]Store, error) {
 		if storeData.(map[string]any)["LocationInfo"].(string) != "" {
 			storeAddress = strings.Split(storeAddress, storeData.(map[string]any)["LocationInfo"].(string))[0]
 		}
+
+		waitTime := 20.0
+		if storeData.(map[string]any)["ServiceMethodEstimatedWaitMinutes"] != nil {
+			// It is possible for a delivery store to not have an estimated time, set to 20 as that seems fine
+			waitTime = storeData.(map[string]any)["ServiceMethodEstimatedWaitMinutes"].(map[string]any)["Delivery"].(map[string]any)["Min"].(float64)
+		}
 		store := Store{
 			StoreID:  storeData.(map[string]any)["StoreID"].(string),
 			Address:  strings.Replace(storeAddress, "\n", " ", -1),
-			WaitTime: storeData.(map[string]any)["ServiceMethodEstimatedWaitMinutes"].(map[string]any)["Delivery"].(map[string]any)["Min"].(float64),
+			WaitTime: waitTime,
 			IsOpen:   storeData.(map[string]any)["IsOpen"].(bool),
 		}
 
