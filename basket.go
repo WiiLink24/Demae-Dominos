@@ -244,7 +244,7 @@ func basketList(r *Response) {
 
 	totalPrice := KVField{
 		XMLName: xml.Name{Local: "totalPrice"},
-		Value:   fmt.Sprintf("$%.2f", items.TotalPrice),
+		Value:   items.TotalPrice,
 	}
 
 	status := KVFieldWChildren{
