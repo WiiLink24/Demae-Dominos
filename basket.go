@@ -32,7 +32,7 @@ func authKey(r *Response) {
 
 	// First we query to determine if the user already has an auth key. If they do, reset the basket.
 	var authExists bool
-	row := pool.QueryRow(context.Background(), DoesAuthKeyExist, r.wiiNumber.GetHollywoodID())
+	row := pool.QueryRow(context.Background(), DoesAuthKeyExist, r.GetHollywoodId())
 	err = row.Scan(&authExists)
 	if err != nil {
 		r.ReportError(err)
@@ -40,14 +40,14 @@ func authKey(r *Response) {
 	}
 
 	if authExists {
-		_, err = pool.Exec(context.Background(), ClearBasket, "", "", "[]", r.wiiNumber.GetHollywoodID())
+		_, err = pool.Exec(context.Background(), ClearBasket, "", "", "[]", r.GetHollywoodId())
 		if err != nil {
 			r.ReportError(err)
 			return
 		}
 	}
 
-	_, err = pool.Exec(context.Background(), InsertAuthkey, authKeyValue.String(), r.wiiNumber.GetHollywoodID())
+	_, err = pool.Exec(context.Background(), InsertAuthkey, authKeyValue.String(), r.GetHollywoodId())
 	if err != nil {
 		r.ReportError(err)
 		return
@@ -62,7 +62,7 @@ func authKey(r *Response) {
 }
 
 func basketReset(r *Response) {
-	_, err := pool.Exec(context.Background(), ClearBasket, "", "", "[]", r.wiiNumber.GetHollywoodID())
+	_, err := pool.Exec(context.Background(), ClearBasket, "", "", "[]", r.GetHollywoodId())
 	if err != nil {
 		r.ReportError(err)
 		return
@@ -77,7 +77,7 @@ func basketDelete(r *Response) {
 	}
 
 	var lastBasket string
-	row := pool.QueryRow(context.Background(), QueryUserBasket, r.wiiNumber.GetHollywoodID())
+	row := pool.QueryRow(context.Background(), QueryUserBasket, r.GetHollywoodId())
 	err = row.Scan(&lastBasket, nil)
 	if err != nil {
 		r.ReportError(err)
@@ -101,7 +101,7 @@ func basketDelete(r *Response) {
 		return
 	}
 
-	_, err = pool.Exec(context.Background(), UpdateUserBasket, jsonStr, r.wiiNumber.GetHollywoodID())
+	_, err = pool.Exec(context.Background(), UpdateUserBasket, jsonStr, r.GetHollywoodId())
 	if err != nil {
 		r.ReportError(err)
 		return

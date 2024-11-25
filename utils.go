@@ -200,7 +200,7 @@ func PostDiscordWebhook(title, message, url string, color int) {
 // then writes a response for the server to send.
 func (r *Response) ReportError(err error) {
 	var discordId string
-	row := pool.QueryRow(context.Background(), QueryDiscordID, r.wiiNumber.GetHollywoodID())
+	row := pool.QueryRow(context.Background(), QueryDiscordID, r.GetHollywoodId())
 	_err := row.Scan(&discordId)
 	if _err != nil {
 		// We assume Discord ID doesn't exist because we will get an error elsewhere if the db is down.
@@ -220,7 +220,7 @@ func (r *Response) ReportError(err error) {
 
 	log.Printf("An error has occurred: %s", aurora.Red(err.Error()))
 
-	errorString := fmt.Sprintf("%s\nWii ID: %d\nDiscord ID: %s", err.Error(), r.wiiNumber.GetHollywoodID(), discordId)
+	errorString := fmt.Sprintf("%s\nWii ID: %d\nDiscord ID: %s", err.Error(), r.GetHollywoodId(), discordId)
 	PostDiscordWebhook("An error has occurred in Demae Domino's!", errorString, config.ErrorWebhook, 16711711)
 
 	// With the new patches I created, we can now send the error to the channel.
