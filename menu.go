@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/mitchellh/go-wordwrap"
-	"net/http"
 	"strings"
 )
 
@@ -13,13 +12,13 @@ func menuList(r *Response) {
 	var err error
 	r.dominos, err = dominos.NewDominos(r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized)
+		r.ReportError(err)
 		return
 	}
 
 	menuData, err := r.dominos.GetMenu(r.request.URL.Query().Get("shopCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err)
 		return
 	}
 
@@ -142,13 +141,13 @@ func itemList(r *Response) {
 	var err error
 	r.dominos, err = dominos.NewDominos(r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized)
+		r.ReportError(err)
 		return
 	}
 
 	itemData, err := r.dominos.GetItemList(r.request.URL.Query().Get("shopCode"), r.request.URL.Query().Get("menuCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err)
 		return
 	}
 
@@ -226,7 +225,7 @@ func itemList(r *Response) {
 				XMLName:   xml.Name{Local: fmt.Sprintf("item%d", i2)},
 				ItemCode:  CDATA{size.Code},
 				Size:      CDATA{sizeName},
-				Price:     CDATA{size.Price},
+				Price:     CDATA{"$" + size.Price},
 				IsSoldout: CDATA{BoolToInt(false)},
 			})
 		}
@@ -251,20 +250,20 @@ func itemOne(r *Response) {
 	r.dominos, err = dominos.NewDominos(r.request)
 	options, err := getToppings(r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err)
 		return
 	}
 
 	price, err := r.dominos.GetFoodPrice(r.request.URL.Query().Get("shopCode"), r.request.URL.Query().Get("itemCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err)
 		return
 	}
 
 	r.ResponseFields = []any{
 		KVField{
 			XMLName: xml.Name{Local: "price"},
-			Value:   price,
+			Value:   "$" + price,
 		},
 		KVFieldWChildren{
 			XMLName: xml.Name{Local: "optionList"},

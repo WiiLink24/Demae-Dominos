@@ -1,10 +1,12 @@
 package main
 
 import (
+	"DemaeDominos/dominos"
 	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"github.com/WiiLink24/nwc24"
 	"github.com/getsentry/sentry-go"
@@ -196,7 +198,7 @@ func PostDiscordWebhook(title, message, url string, color int) {
 
 // ReportError helps make errors nicer. First it logs the error to Sentry,
 // then writes a response for the server to send.
-func (r *Response) ReportError(err error, code int) {
+func (r *Response) ReportError(err error) {
 	var discordId string
 	row := pool.QueryRow(context.Background(), QueryDiscordID, r.wiiNumber.GetHollywoodID())
 	_err := row.Scan(&discordId)
@@ -206,8 +208,10 @@ func (r *Response) ReportError(err error, code int) {
 		discordId = fmt.Sprintf("Not Registered: %s", uuid.New().String())
 	}
 
-	// Write the JSON Dominos sent us to the system.
-	_ = os.WriteFile(fmt.Sprintf("errors/%s_%s.json", r.request.URL.Path, discordId), r.dominos.GetResponse(), 0664)
+	if !errors.Is(err, dominos.InvalidCountry) && r.dominos != nil {
+		// Write the JSON Dominos sent us to the system.
+		_ = os.WriteFile(fmt.Sprintf("errors/%s_%s.json", r.request.URL.Path, discordId), r.dominos.GetResponse(), 0664)
+	}
 
 	sentry.WithScope(func(s *sentry.Scope) {
 		s.SetTag("Discord ID", discordId)
@@ -219,9 +223,8 @@ func (r *Response) ReportError(err error, code int) {
 	errorString := fmt.Sprintf("%s\nWii ID: %d\nDiscord ID: %s", err.Error(), r.wiiNumber.GetHollywoodID(), discordId)
 	PostDiscordWebhook("An error has occurred in Demae Domino's!", errorString, config.ErrorWebhook, 16711711)
 
-	// Write response
-	r.hasError = true
-	http.Error(*r.writer, err.Error(), code)
+	// With the new patches I created, we can now send the error to the channel.
+	r.AddKVNode("error", err.Error())
 }
 
 func printError(w http.ResponseWriter, reason string, code int) {

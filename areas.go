@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/xml"
 	"math/rand"
-	"net/http"
 	"strconv"
 )
 
@@ -258,7 +257,7 @@ func areaList(r *Response) {
 	newAreaCode := GenerateAreaCode(areaCode)
 	_, err := pool.Exec(context.Background(), InsertUser, newAreaCode, r.request.Header.Get("X-WiiID"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err)
 		return
 	}
 

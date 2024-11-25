@@ -7,7 +7,6 @@ import (
 	"golang.org/x/text/encoding/japanese"
 	"golang.org/x/text/transform"
 	"io"
-	"net/http"
 	"strings"
 )
 
@@ -30,7 +29,7 @@ func categoryList(r *Response) {
 	var err error
 	r.dominos, err = dominos.NewDominos(r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized)
+		r.ReportError(err)
 		return
 	}
 
@@ -38,7 +37,8 @@ func categoryList(r *Response) {
 	addresss := r.request.Header.Get("X-Address")
 	stores, err := r.dominos.StoreLookup(postalCode, addresss)
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		// This endpoint will never return an error from Dominos, just a JSON decode error
+		r.ReportError(err)
 		return
 	}
 
@@ -47,7 +47,7 @@ func categoryList(r *Response) {
 		// We need to get the actual min price
 		shopData, err := r.dominos.GetStoreInfo(storeData.StoreID)
 		if err != nil {
-			r.ReportError(err, http.StatusInternalServerError)
+			r.ReportError(err)
 			return
 		}
 
@@ -56,7 +56,7 @@ func categoryList(r *Response) {
 			HomeCode:    CDATA{1},
 			Name:        CDATA{"Domino's Pizza"},
 			Catchphrase: CDATA{storeData.Address},
-			MinPrice:    CDATA{shopData.MinPrice},
+			MinPrice:    CDATA{fmt.Sprintf("%.2f", shopData.MinPrice)},
 			Yoyaku:      CDATA{1},
 			Activate:    CDATA{"on"},
 			WaitTime:    CDATA{storeData.WaitTime},
@@ -118,6 +118,22 @@ func categoryList(r *Response) {
 		},
 	}
 
+	/*container := KVFieldWChildren{
+		XMLName: xml.Name{Local: "container"},
+		Value: []any{
+			KVField{
+				XMLName: xml.Name{Local: "CategoryCode"},
+				Value:   "02",
+			},
+			KVFieldWChildren{
+				XMLName: xml.Name{Local: "ShopList"},
+				Value: []any{
+					storesXML,
+				},
+			},
+		},
+	}*/
+
 	placeholder := KVFieldWChildren{
 		XMLName: xml.Name{Local: "Placeholder"},
 		Value: []any{
@@ -156,6 +172,108 @@ func categoryList(r *Response) {
 	}
 }
 
+func shopInfo(r *Response) {
+	var err error
+	r.dominos, err = dominos.NewDominos(r.request)
+	if err != nil {
+		r.ReportError(err)
+		return
+	}
+
+	postalCode := r.request.Header.Get("X-Postalcode")
+	addresss := r.request.Header.Get("X-Address")
+	stores, err := r.dominos.StoreLookup(postalCode, addresss)
+	if err != nil {
+		// This endpoint will never return an error from Dominos, just a JSON decode error
+		r.ReportError(err)
+		return
+	}
+
+	var storesXML []BasicShop
+	for _, storeData := range stores {
+		// We need to get the actual min price
+		shopData, err := r.dominos.GetStoreInfo(storeData.StoreID)
+		if err != nil {
+			r.ReportError(err)
+			return
+		}
+
+		store := BasicShop{
+			ShopCode:    CDATA{storeData.StoreID},
+			HomeCode:    CDATA{1},
+			Name:        CDATA{"Domino's Pizza"},
+			Catchphrase: CDATA{storeData.Address},
+			MinPrice:    CDATA{fmt.Sprintf("%.2f", shopData.MinPrice)},
+			Yoyaku:      CDATA{1},
+			Activate:    CDATA{"on"},
+			WaitTime:    CDATA{storeData.WaitTime},
+			PaymentList: KVFieldWChildren{
+				XMLName: xml.Name{Local: "paymentList"},
+				Value: []any{
+					KVField{
+						XMLName: xml.Name{Local: "athing"},
+						Value:   "Fox Card",
+					},
+				},
+			},
+			ShopStatus: KVFieldWChildren{
+				XMLName: xml.Name{Local: "shopStatus"},
+				Value: []any{
+					KVFieldWChildren{
+						XMLName: xml.Name{Local: "status"},
+						Value: []any{
+							KVField{
+								XMLName: xml.Name{Local: "isOpen"},
+								Value:   BoolToInt(storeData.IsOpen),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		storesXML = append(storesXML, store)
+	}
+	container := KVFieldWChildren{
+		XMLName: xml.Name{Local: "container"},
+		Value: []any{
+			KVField{
+				XMLName: xml.Name{Local: "CategoryCode"},
+				Value:   "01",
+			},
+			KVFieldWChildren{
+				XMLName: xml.Name{Local: "ShopList"},
+				Value: []any{
+					storesXML,
+				},
+			},
+		},
+	}
+
+	placeholder := KVFieldWChildren{
+		XMLName: xml.Name{Local: "container"},
+		Value: []any{
+			KVField{
+				XMLName: xml.Name{Local: "CategoryCode"},
+				Value:   "02",
+			},
+			KVFieldWChildren{
+				XMLName: xml.Name{Local: "ShopList"},
+				Value: []any{
+					storesXML,
+				},
+			},
+		},
+	}
+
+	r.AddCustomType(container)
+
+	// It there is no nearby stores, we do not add the placeholder. This will tell the user there are no stores.
+	if storesXML != nil {
+		r.AddCustomType(placeholder)
+	}
+}
+
 func inquiryDone(r *Response) {
 	// For our purposes, we will not be handling any restaurant requests.
 	// However, the error endpoint uses this, so we must deal with that.
@@ -176,5 +294,5 @@ func inquiryDone(r *Response) {
 		shiftJisDecoder(r.request.PostForm.Get("message")),
 	)
 
-	r.ReportError(fmt.Errorf(errorString), http.StatusInternalServerError)
+	r.ReportError(fmt.Errorf(errorString))
 }

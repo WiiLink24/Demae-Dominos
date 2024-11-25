@@ -2,6 +2,7 @@ package main
 
 import (
 	"DemaeDominos/dominos"
+	"fmt"
 	"github.com/getsentry/sentry-go"
 	"net/http"
 	"strings"
@@ -57,6 +58,7 @@ func (r *RoutingGroup) MultipleRootNodes(action string, function func(*Response)
 
 func (r *Route) Handle() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		fmt.Println(req.URL.String())
 		// First check if it is an image route.
 		if strings.Contains(req.URL.Path, "itemimg") {
 			splitUrl := strings.Split(req.URL.Path, "/")
@@ -120,11 +122,6 @@ func (r *Route) Handle() http.Handler {
 		}
 
 		action.Callback(resp)
-
-		if resp.hasError {
-			// Response was already written by callback function.
-			return
-		}
 
 		contents, err := resp.toXML()
 		if err != nil {

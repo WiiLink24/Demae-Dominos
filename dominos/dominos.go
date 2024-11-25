@@ -83,7 +83,7 @@ func (d *Dominos) AddressLookup(zipCode, address string) (*User, error) {
 	}
 
 	if jsonData["Status"].(float64) != 0 && jsonData["Status"].(float64) != 1 {
-		return nil, fmt.Errorf("domino's returned a status code of %.0f", jsonData["Status"].(float64))
+		return nil, MakeError(jsonData)
 	}
 
 	locationType := "House"
@@ -634,7 +634,8 @@ func (d *Dominos) GetPrice(user *User) (*Basket, error) {
 	}
 
 	if jsonData["Status"].(float64) != 0 && jsonData["Status"].(float64) != 1 {
-		return nil, fmt.Errorf("domino's returned a status code of %.0f\nError: %s", jsonData["Status"].(float64), jsonData["StatusItems"].([]any)[0].(map[string]any)["Code"].(string))
+		// 0 is success, 1 is a warning that is non-fatal
+		return nil, MakeError(jsonData)
 	}
 
 	var items []BasketItem
@@ -651,9 +652,9 @@ func (d *Dominos) GetPrice(user *User) (*Basket, error) {
 
 		items = append(items, BasketItem{
 			Code:     itemData["Code"].(string),
-			Name:     &name,
-			Price:    &price,
-			Amount:   &amount,
+			Name:     name,
+			Price:    price,
+			Amount:   amount,
 			Quantity: int(itemData["Qty"].(float64)),
 			Options:  options,
 		})
@@ -758,7 +759,7 @@ func (d *Dominos) PlaceOrder(info *User) error {
 	}
 
 	if jsonData["Status"].(float64) != 0 && jsonData["Status"].(float64) != 1 {
-		return fmt.Errorf("domino's returned a status code of %.0f", jsonData["Status"].(float64))
+		return MakeError(jsonData)
 	}
 
 	return nil

@@ -3,20 +3,19 @@ package main
 import (
 	"DemaeDominos/dominos"
 	"encoding/xml"
-	"net/http"
 )
 
 func shopOne(r *Response) {
 	var err error
 	r.dominos, err = dominos.NewDominos(r.request)
 	if err != nil {
-		r.ReportError(err, http.StatusUnauthorized)
+		r.ReportError(err)
 		return
 	}
 
 	shopData, err := r.dominos.GetStoreInfo(r.request.URL.Query().Get("shopCode"))
 	if err != nil {
-		r.ReportError(err, http.StatusInternalServerError)
+		r.ReportError(err)
 		return
 	}
 

@@ -69,9 +69,9 @@ type Topping struct {
 
 type BasketItem struct {
 	Code     string
-	Name     *string
-	Price    *float64
-	Amount   *float64
+	Name     string
+	Price    float64
+	Amount   float64
 	Quantity int
 	ID       int
 	Options  []string

@@ -3,7 +3,7 @@ module DemaeDominos
 go 1.21.0
 
 require (
-	github.com/WiiLink24/nwc24 v0.0.0-20240730034039-5a01c12ac49f
+	github.com/WiiLink24/nwc24 v0.0.0-20240814085438-31848a3afc3e
 	github.com/getsentry/sentry-go v0.28.1
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/uuid v1.6.0
@@ -11,7 +11,7 @@ require (
 	github.com/logrusorgru/aurora/v4 v4.0.0
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/remizovm/geonames v0.1.0
-	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
+	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
 	golang.org/x/image v0.19.0
 	golang.org/x/text v0.17.0
 )
