@@ -14,9 +14,11 @@ import (
 	"time"
 )
 
-var pool *pgxpool.Pool
-var geonameCities map[int]*models.Feature
-var config *Config
+var (
+	pool          *pgxpool.Pool
+	geonameCities map[int]*models.Feature
+	config        *Config
+)
 
 func checkError(err error) {
 	if err != nil {

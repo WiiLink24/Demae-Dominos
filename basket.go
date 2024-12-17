@@ -401,6 +401,12 @@ func orderDone(r *Response) {
 	user.OrderId = orderId
 	user.Price = price
 
+	if r.request.PostForm.Get("order[TimeSelect]") != "NORMAL" {
+		// Split into what Dominos wants
+		orderTime := r.request.PostForm.Get("order[DeliveryDate]")
+		user.OrderTime = orderTime[:4] + "-" + orderTime[4:6] + "-" + orderTime[6:8] + " " + orderTime[8:10] + ":" + orderTime[10:12] + ":" + orderTime[12:14]
+	}
+
 	// If the error does fail we should alert the user and allow for the basket to be cleared.
 	didError := false
 	err = r.dominos.PlaceOrder(user)

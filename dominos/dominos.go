@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 func (d *Dominos) StoreLookup(zipCode, address string) ([]Store, error) {
@@ -147,6 +148,25 @@ func (d *Dominos) GetStoreInfo(storeId string) (*Store, error) {
 		}
 	}
 
+	var hours []ServiceHours
+	if jsonData["ServiceHours"].(map[string]any)["Delivery"] == nil {
+		return nil, NoDeliveryHours
+	}
+
+	// Get current day based on local time
+	t, err := time.Parse(time.DateTime, jsonData["StoreAsOfTime"].(string))
+	if err != nil {
+		return nil, err
+	}
+
+	currDay := t.Weekday().String()[:3]
+	for _, times := range jsonData["ServiceHours"].(map[string]any)["Delivery"].(map[string]any)[currDay].([]any) {
+		hours = append(hours, ServiceHours{
+			OpenTime:  times.(map[string]any)["OpenTime"].(string) + ":00",
+			CloseTime: times.(map[string]any)["CloseTime"].(string) + ":00",
+		})
+	}
+
 	return &Store{
 		StoreID:      jsonData["StoreID"].(string),
 		Address:      address,
@@ -155,7 +175,7 @@ func (d *Dominos) GetStoreInfo(storeId string) (*Store, error) {
 		IsOpen:       jsonData["IsOpen"].(bool),
 		DetailedWait: jsonData["EstimatedWaitMinutes"].(string),
 		Phone:        jsonData["Phone"].(string),
-		ServiceHours: ServiceHours{},
+		ServiceHours: hours,
 		Information:  information,
 	}, nil
 }
@@ -741,6 +761,10 @@ func (d *Dominos) PlaceOrder(info *User) error {
 
 	if info.ApartmentNumber != "" {
 		payload["Order"].(map[string]any)["Address"].(map[string]any)["AddressLine2"] = info.ApartmentNumber
+	}
+
+	if info.OrderTime != "" {
+		payload["Order"].(map[string]any)["FutureOrderTime"] = info.OrderTime
 	}
 
 	data, err := json.Marshal(payload)

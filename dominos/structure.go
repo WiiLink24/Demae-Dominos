@@ -33,7 +33,7 @@ type Store struct {
 	IsOpen       bool
 	DetailedWait string
 	Phone        string
-	ServiceHours ServiceHours
+	ServiceHours []ServiceHours
 	Information  string
 }
 
@@ -102,4 +102,5 @@ type User struct {
 	PhoneNumber     string
 	OrderId         string
 	Price           string
+	OrderTime       string
 }

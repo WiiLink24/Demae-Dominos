@@ -3,6 +3,7 @@ package main
 import (
 	"DemaeDominos/dominos"
 	"encoding/xml"
+	"fmt"
 )
 
 func shopOne(r *Response) {
@@ -19,9 +20,33 @@ func shopOne(r *Response) {
 		return
 	}
 
+	// Form the open times
+	var times []KVFieldWChildren
+	for i, hour := range shopData.ServiceHours {
+		kv := KVFieldWChildren{
+			XMLName: xml.Name{Local: fmt.Sprintf("values%d", i)},
+			Value: []any{
+				KVField{
+					XMLName: xml.Name{Local: "start"},
+					Value:   hour.OpenTime,
+				},
+				KVField{
+					XMLName: xml.Name{Local: "end"},
+					Value:   hour.CloseTime,
+				},
+				KVField{
+					XMLName: xml.Name{Local: "holiday"},
+					Value:   "n",
+				},
+			},
+		}
+
+		times = append(times, kv)
+	}
+
 	shop := ShopOne{
 		CategoryCode:  CDATA{"01"},
-		Address:       CDATA{"Nope"},
+		Address:       CDATA{shopData.Address},
 		Information:   CDATA{shopData.Information},
 		Attention:     CDATA{"why"},
 		Amenity:       CDATA{"Domino's Pizza"},
@@ -60,35 +85,7 @@ func shopOne(r *Response) {
 							KVFieldWChildren{
 								XMLName: xml.Name{Local: "values"},
 								Value: []any{
-									KVField{
-										XMLName: xml.Name{Local: "start"},
-										Value:   "01:00:00",
-									},
-									KVField{
-										XMLName: xml.Name{Local: "end"},
-										Value:   "23:45:00",
-									},
-									KVField{
-										XMLName: xml.Name{Local: "holiday"},
-										Value:   "n",
-									},
-								},
-							},
-							KVFieldWChildren{
-								XMLName: xml.Name{Local: "values1"},
-								Value: []any{
-									KVField{
-										XMLName: xml.Name{Local: "start"},
-										Value:   "01:00:00",
-									},
-									KVField{
-										XMLName: xml.Name{Local: "end"},
-										Value:   "23:45:00",
-									},
-									KVField{
-										XMLName: xml.Name{Local: "holiday"},
-										Value:   "n",
-									},
+									times[:],
 								},
 							},
 						},
@@ -99,18 +96,7 @@ func shopOne(r *Response) {
 							KVFieldWChildren{
 								XMLName: xml.Name{Local: "values"},
 								Value: []any{
-									KVField{
-										XMLName: xml.Name{Local: "start"},
-										Value:   "01:00:00",
-									},
-									KVField{
-										XMLName: xml.Name{Local: "end"},
-										Value:   "23:45:00",
-									},
-									KVField{
-										XMLName: xml.Name{Local: "holiday"},
-										Value:   "n",
-									},
+									times[:],
 								},
 							},
 						},
@@ -130,7 +116,8 @@ func shopOne(r *Response) {
 					},
 				},
 			},
-			Interval: CDATA{5},
+			// Dominos does 15 minute intervals
+			Interval: CDATA{15},
 			Holiday:  CDATA{"No ordering on Canada Day"},
 		},
 		RecommendedItemList: KVFieldWChildren{
