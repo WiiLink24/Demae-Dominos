@@ -34,8 +34,9 @@ func categoryList(r *Response) {
 	}
 
 	postalCode := r.request.Header.Get("X-Postalcode")
-	addresss := r.request.Header.Get("X-Address")
-	stores, err := r.dominos.StoreLookup(postalCode, addresss)
+	address := r.request.Header.Get("X-Address")
+	aptNum := r.request.Header.Get("X-Aptnumber")
+	stores, err := r.dominos.StoreLookup(postalCode, address, aptNum)
 	if err != nil {
 		// This endpoint will never return an error from Dominos, just a JSON decode error
 		r.ReportError(err)
@@ -181,8 +182,9 @@ func shopInfo(r *Response) {
 	}
 
 	postalCode := r.request.Header.Get("X-Postalcode")
-	addresss := r.request.Header.Get("X-Address")
-	stores, err := r.dominos.StoreLookup(postalCode, addresss)
+	address := r.request.Header.Get("X-Address")
+	aptNum := r.request.Header.Get("X-Aptnumber")
+	stores, err := r.dominos.StoreLookup(postalCode, address, aptNum)
 	if err != nil {
 		// This endpoint will never return an error from Dominos, just a JSON decode error
 		r.ReportError(err)

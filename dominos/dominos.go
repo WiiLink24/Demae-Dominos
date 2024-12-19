@@ -13,7 +13,11 @@ import (
 	"time"
 )
 
-func (d *Dominos) StoreLookup(zipCode, address string) ([]Store, error) {
+func (d *Dominos) StoreLookup(zipCode, address, aptNum string) ([]Store, error) {
+	if aptNum != "" {
+		address += " #" + aptNum
+	}
+
 	queryParams := url.Values{
 		"type": {"Delivery"},
 		"c":    {zipCode},
@@ -707,7 +711,7 @@ func (d *Dominos) PlaceOrder(info *User) error {
 			"Type":                 info.LocationType,
 			"StreetName":           info.StreetName,
 			"StreetNumber":         info.StreetNumber,
-			"DeliveryInstructions": "DO NOT PROCESS ORDER. TESTING WEB SERVICES",
+			"DeliveryInstructions": "",
 		},
 		"EstimatedWaitMinutes": "21-31",
 		"Channel":              "Mobile",
