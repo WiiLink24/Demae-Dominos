@@ -764,7 +764,7 @@ func (d *Dominos) PlaceOrder(info *User) error {
 	}
 
 	if info.ApartmentNumber != "" {
-		payload["Order"].(map[string]any)["Address"].(map[string]any)["AddressLine2"] = info.ApartmentNumber
+		payload["Order"].(map[string]any)["Address"].(map[string]any)["UnitNumber"] = info.ApartmentNumber
 	}
 
 	if info.OrderTime != "" {
