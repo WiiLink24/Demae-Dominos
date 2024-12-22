@@ -220,7 +220,7 @@ func (r *Response) ReportError(err error) {
 
 	log.Printf("An error has occurred: %s", aurora.Red(err.Error()))
 
-	errorString := fmt.Sprintf("%s\nWii ID: %d\nDiscord ID: %s", err.Error(), r.GetHollywoodId(), discordId)
+	errorString := fmt.Sprintf("%s\nWii ID: %s\nDiscord ID: %s", err.Error(), r.GetHollywoodId(), discordId)
 	PostDiscordWebhook("An error has occurred in Demae Domino's!", errorString, config.ErrorWebhook, 16711711)
 
 	// With the new patches I created, we can now send the error to the channel.
