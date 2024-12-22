@@ -197,7 +197,7 @@ func PostDiscordWebhook(title, message, url string, color int) {
 func (r *Response) ReportError(err error) {
 	if !errors.Is(err, dominos.InvalidCountry) && r.dominos != nil {
 		// Write the JSON Dominos sent us to the system.
-		_ = os.WriteFile(fmt.Sprintf("errors/%s_%s.json", r.request.URL.Path, r.GetHollywoodId()), r.dominos.GetResponse(), 0664)
+		_ = os.WriteFile(fmt.Sprintf("errors/%s_%s.json", r.request.URL.Path, r.request.Header.Get("X-WiiNo")), r.dominos.GetResponse(), 0664)
 	}
 
 	sentry.WithScope(func(s *sentry.Scope) {
@@ -207,7 +207,7 @@ func (r *Response) ReportError(err error) {
 
 	log.Printf("An error has occurred: %s", aurora.Red(err.Error()))
 
-	errorString := fmt.Sprintf("%s\nWii ID: %s", err.Error(), r.GetHollywoodId())
+	errorString := fmt.Sprintf("%s\nWii ID: %s\nWii Number: %s", err.Error(), r.GetHollywoodId(), r.request.Header.Get("X-WiiNo"))
 	PostDiscordWebhook("An error has occurred in Demae Domino's!", errorString, config.ErrorWebhook, 16711711)
 
 	// With the new patches I created, we can now send the error to the channel.
