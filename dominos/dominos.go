@@ -692,8 +692,8 @@ func (d *Dominos) GetPrice(user *User) (*Basket, error) {
 
 	return &Basket{
 		Items:       items,
-		BasketPrice: jsonData["Order"].(map[string]any)["Amounts"].(map[string]any)["Menu"].(float64),
-		ChargePrice: jsonData["Order"].(map[string]any)["Amounts"].(map[string]any)["Tax"].(float64),
+		BasketPrice: jsonData["Order"].(map[string]any)["AmountsBreakdown"].(map[string]any)["FoodAndBeverage"].(string),
+		ChargePrice: jsonData["Order"].(map[string]any)["Amounts"].(map[string]any)["Surcharge"].(float64),
 		TotalPrice:  jsonData["Order"].(map[string]any)["Amounts"].(map[string]any)["Customer"].(float64),
 		OrderId:     jsonData["Order"].(map[string]any)["OrderID"].(string),
 	}, nil

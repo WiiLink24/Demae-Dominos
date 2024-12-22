@@ -79,7 +79,7 @@ type BasketItem struct {
 
 type Basket struct {
 	Items       []BasketItem
-	BasketPrice float64
+	BasketPrice string
 	ChargePrice float64
 	TotalPrice  float64
 	OrderId     string

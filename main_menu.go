@@ -17,11 +17,13 @@ func documentTemplate(r *Response) {
 	})
 	r.AddKVWChildNode("container1", KVField{
 		XMLName: xml.Name{Local: "contents"},
-		Value:   "Among Us",
+		// Delivery success
+		Value: "Enjoy your food!",
 	})
 	r.AddKVWChildNode("container2", KVField{
 		XMLName: xml.Name{Local: "contents"},
-		Value:   "Among Us",
+		// Delivery failed
+		Value: "Contact WiiLink Support with your Wii Number",
 	})
 }
 
