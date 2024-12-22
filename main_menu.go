@@ -13,7 +13,7 @@ import (
 func documentTemplate(r *Response) {
 	r.AddKVWChildNode("container0", KVField{
 		XMLName: xml.Name{Local: "contents"},
-		Value:   "By clicking agree, you verify you have read and\nagreed to https://wiilink.ca/demae/privacypolicy and https://wiilink.ca/tos",
+		Value:   "By clicking agree, you verify you have read and\nagreed to https://wiilink.ca/demae/privacypolicy\nand https://wiilink.ca/tos.",
 	})
 	r.AddKVWChildNode("container1", KVField{
 		XMLName: xml.Name{Local: "contents"},
