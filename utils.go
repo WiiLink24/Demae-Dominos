@@ -3,22 +3,18 @@ package main
 import (
 	"DemaeDominos/dominos"
 	"bytes"
-	"context"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"github.com/WiiLink24/nwc24"
 	"github.com/getsentry/sentry-go"
-	"github.com/google/uuid"
 	"github.com/logrusorgru/aurora/v4"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 )
-
-const QueryDiscordID = `SELECT "user".discord_id FROM "user" WHERE "user".wii_id = $1 LIMIT 1`
 
 func NewResponse(r *http.Request, w *http.ResponseWriter, xmlType XMLType) *Response {
 	wiiNumber, err := strconv.ParseUint(r.Header.Get("X-WiiNo"), 10, 64)
@@ -199,28 +195,19 @@ func PostDiscordWebhook(title, message, url string, color int) {
 // ReportError helps make errors nicer. First it logs the error to Sentry,
 // then writes a response for the server to send.
 func (r *Response) ReportError(err error) {
-	var discordId string
-	row := pool.QueryRow(context.Background(), QueryDiscordID, r.GetHollywoodId())
-	_err := row.Scan(&discordId)
-	if _err != nil {
-		// We assume Discord ID doesn't exist because we will get an error elsewhere if the db is down.
-		// UUID's are generated for each error case, so we have a unique identifier
-		discordId = fmt.Sprintf("Not Registered: %s", uuid.New().String())
-	}
-
 	if !errors.Is(err, dominos.InvalidCountry) && r.dominos != nil {
 		// Write the JSON Dominos sent us to the system.
-		_ = os.WriteFile(fmt.Sprintf("errors/%s_%s.json", r.request.URL.Path, discordId), r.dominos.GetResponse(), 0664)
+		_ = os.WriteFile(fmt.Sprintf("errors/%s_%s.json", r.request.URL.Path, r.GetHollywoodId()), r.dominos.GetResponse(), 0664)
 	}
 
 	sentry.WithScope(func(s *sentry.Scope) {
-		s.SetTag("Discord ID", discordId)
+		s.SetTag("Wii ID", r.GetHollywoodId())
 		sentry.CaptureException(err)
 	})
 
 	log.Printf("An error has occurred: %s", aurora.Red(err.Error()))
 
-	errorString := fmt.Sprintf("%s\nWii ID: %s\nDiscord ID: %s", err.Error(), r.GetHollywoodId(), discordId)
+	errorString := fmt.Sprintf("%s\nWii ID: %s", err.Error(), r.GetHollywoodId())
 	PostDiscordWebhook("An error has occurred in Demae Domino's!", errorString, config.ErrorWebhook, 16711711)
 
 	// With the new patches I created, we can now send the error to the channel.
