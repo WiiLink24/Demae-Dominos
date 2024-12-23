@@ -49,7 +49,7 @@ func (d *Dominos) StoreLookup(zipCode, address, aptNum string) ([]Store, error) 
 		}
 
 		storeAddress := storeData.(map[string]any)["AddressDescription"].(string)
-		if storeData.(map[string]any)["LocationInfo"].(string) != "" {
+		if storeData.(map[string]any)["LocationInfo"] != "" {
 			storeAddress = strings.Split(storeAddress, storeData.(map[string]any)["LocationInfo"].(string))[0]
 		}
 
