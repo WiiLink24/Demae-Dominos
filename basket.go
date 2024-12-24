@@ -408,16 +408,16 @@ func orderDone(r *Response) {
 	}
 
 	// If the error does fail we should alert the user and allow for the basket to be cleared.
-	didError := false
-	err = r.dominos.PlaceOrder(user)
-	if err != nil {
+	orderErr := r.dominos.PlaceOrder(user)
+	if orderErr != nil {
 		PostDiscordWebhook(
 			"Performing error failed.",
 			fmt.Sprintf("The order was placed by user id %s", r.GetHollywoodId()),
 			config.OrderWebhook,
 			65311,
 		)
-		didError = true
+		r.ReportError(err)
+		return
 	}
 
 	currentTime := time.Now().Format("200602011504")
@@ -432,7 +432,7 @@ func orderDone(r *Response) {
 
 	// Remove the order data from the database
 	_, err = pool.Exec(context.Background(), ClearBasket, "", "", "[]", r.GetHollywoodId())
-	if err != nil || didError {
+	if err != nil {
 		r.ReportError(err)
 		return
 	}
