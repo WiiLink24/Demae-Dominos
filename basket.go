@@ -416,7 +416,7 @@ func orderDone(r *Response) {
 			config.OrderWebhook,
 			65311,
 		)
-		r.ReportError(err)
+		r.ReportError(orderErr)
 		return
 	}
 
