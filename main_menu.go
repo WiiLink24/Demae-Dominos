@@ -58,7 +58,7 @@ func categoryList(r *Response) {
 			ShopCode:    CDATA{storeData.StoreID},
 			HomeCode:    CDATA{1},
 			Name:        CDATA{"Domino's Pizza"},
-			Catchphrase: CDATA{storeData.Address},
+			Catchphrase: CDATA{shopData.Address},
 			MinPrice:    CDATA{fmt.Sprintf("%.2f", shopData.MinPrice)},
 			Yoyaku:      CDATA{1},
 			Activate:    CDATA{"on"},
