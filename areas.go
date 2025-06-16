@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"encoding/xml"
+	"github.com/remizovm/geonames/models"
 	"math/rand"
+	"sort"
 	"strconv"
 )
 
@@ -122,22 +124,31 @@ func IsAreaAmerican(stateCode string) bool {
 
 func GetCitiesByStateCode(stateCode, areaCode string) []Area {
 	var cities []Area
+	var citiesInState []*models.Feature
 
 	for _, city := range geonameCities {
 		if city.CountryCode == "CA" || city.CountryCode == "US" {
-			if city.Admin1Code == stateCode && *city.Population > 50000 {
-				cities = append(cities, Area{
-					AreaName:   CDATA{city.Name},
-					AreaCode:   CDATA{areaCode},
-					IsNextArea: CDATA{0},
-					Display:    CDATA{1},
-					Kanji1:     CDATA{GetStateName(stateCode)},
-					Kanji2:     CDATA{city.Name},
-					Kanji3:     CDATA{""},
-					Kanji4:     CDATA{""},
-				})
+			if city.Admin1Code == stateCode {
+				citiesInState = append(citiesInState, city)
 			}
 		}
+	}
+
+	sort.Slice(citiesInState, func(i, j int) bool {
+		return *citiesInState[i].Population > *citiesInState[j].Population
+	})
+
+	for _, city := range citiesInState[:30] {
+		cities = append(cities, Area{
+			AreaName:   CDATA{city.Name},
+			AreaCode:   CDATA{areaCode},
+			IsNextArea: CDATA{0},
+			Display:    CDATA{1},
+			Kanji1:     CDATA{GetStateName(stateCode)},
+			Kanji2:     CDATA{city.Name},
+			Kanji3:     CDATA{""},
+			Kanji4:     CDATA{""},
+		})
 	}
 
 	return cities
