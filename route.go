@@ -94,7 +94,7 @@ func (r *Route) Handle() http.Handler {
 		}
 
 		if userAgent != "wii" {
-			printError(w, "Invalid request.", http.StatusBadRequest)
+			http.Error(w, "Invalid request.", http.StatusBadRequest)
 			return
 		}
 
