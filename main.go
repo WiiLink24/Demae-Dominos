@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 )
 
@@ -84,19 +83,6 @@ func main() {
 	}
 
 	// Start everything
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
-
-	for i := 0; i < 2; i++ {
-		go func(idx int) {
-			defer wg.Done()
-			if idx == 1 {
-				log.Fatal(http.ListenAndServe(config.Address, r.Handle()))
-			} else {
-				socketListen()
-			}
-		}(i)
-	}
-
-	wg.Wait()
+	go socketListen()
+	log.Fatal(http.ListenAndServe(config.Address, r.Handle()))
 }
