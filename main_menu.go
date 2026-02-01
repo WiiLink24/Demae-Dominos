@@ -3,11 +3,13 @@ package main
 import (
 	"DemaeDominos/dominos"
 	"encoding/xml"
+	"errors"
 	"fmt"
-	"golang.org/x/text/encoding/japanese"
-	"golang.org/x/text/transform"
 	"io"
 	"strings"
+
+	"golang.org/x/text/encoding/japanese"
+	"golang.org/x/text/transform"
 )
 
 func documentTemplate(r *Response) {
@@ -298,5 +300,5 @@ func inquiryDone(r *Response) {
 		shiftJisDecoder(r.request.PostForm.Get("message")),
 	)
 
-	r.ReportError(fmt.Errorf(errorString))
+	r.ReportError(errors.New(errorString))
 }
