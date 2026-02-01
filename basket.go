@@ -5,12 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
-	"github.com/gofrs/uuid"
-	"github.com/mitchellh/go-wordwrap"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gofrs/uuid"
+	"github.com/jackc/pgx/v4"
+	"github.com/mitchellh/go-wordwrap"
 )
 
 const (
@@ -26,6 +29,9 @@ const (
 func authKey(r *Response) {
 	authKeyValue, err := uuid.DefaultGenerator.NewV1()
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = errors.New("Follow wiilink.ca/guide/accounts and enable Domino's ordering.\nError Code: ")
+		}
 		r.ReportError(err)
 		return
 	}

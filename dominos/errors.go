@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	InvalidCountry  = errors.New("invalid country code")
-	GenericError    = errors.New("An unknown error has occurred. Please contact WiiLink support\nError Code: ")
-	NoDeliveryHours = errors.New("no delivery hours are available")
+	InvalidCountry  = errors.New("Your Wii's country is not supported (US and Canada only).\nError Code: ")
+	GenericError    = errors.New("An unknown error has occurred. Please contact WiiLink support.\nError Code: ")
+	NoDeliveryHours = errors.New("No delivery hours are available.\nError Code: ")
 )
 
 func MakeError(err map[string]any) error {
