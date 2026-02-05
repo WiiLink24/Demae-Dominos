@@ -29,9 +29,6 @@ const (
 func authKey(r *Response) {
 	authKeyValue, err := uuid.DefaultGenerator.NewV1()
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			err = errors.New("Follow wiilink.ca/guide/accounts and enable Domino's ordering.\nError Code: ")
-		}
 		r.ReportError(err)
 		return
 	}
@@ -164,6 +161,9 @@ func basketAdd(r *Response) {
 	row := pool.QueryRow(context.Background(), QueryUserBasket, r.GetHollywoodId())
 	err = row.Scan(&lastBasket, &_authKey)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = errors.New("Follow wiilink.ca/guide/accounts and enable Domino's ordering.\nError Code: ")
+		}
 		r.ReportError(err)
 		return
 	}
@@ -199,6 +199,9 @@ func basketList(r *Response) {
 	row := pool.QueryRow(context.Background(), QueryUserBasket, r.GetHollywoodId())
 	err := row.Scan(&basketStr, nil)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = errors.New("Follow wiilink.ca/guide/accounts and enable Domino's ordering.\nError Code: ")
+		}
 		r.ReportError(err)
 		return
 	}
