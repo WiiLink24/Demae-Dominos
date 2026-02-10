@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/xml"
 	"math/rand"
+	"sort"
 	"strconv"
+
+	"github.com/remizovm/geonames/models"
 )
 
 const InsertUser = `UPDATE "user" SET area_code = $1 WHERE wii_id = $2`
@@ -122,24 +125,38 @@ func IsAreaAmerican(stateCode string) bool {
 
 func GetCitiesByStateCode(stateCode, areaCode string) []Area {
 	var cities []Area
+	var citiesInState []*models.Feature
+	stateName := GetStateName(stateCode)
 
 	for _, city := range geonameCities {
 		if city.CountryCode == "CA" || city.CountryCode == "US" {
-			if city.Admin1Code == stateCode && *city.Population > 50000 {
-				cities = append(cities, Area{
-					AreaName:   CDATA{city.Name},
-					AreaCode:   CDATA{areaCode},
-					IsNextArea: CDATA{0},
-					Display:    CDATA{1},
-					Kanji1:     CDATA{GetStateName(stateCode)},
-					Kanji2:     CDATA{city.Name},
-					Kanji3:     CDATA{""},
-					Kanji4:     CDATA{""},
-				})
+			if city.Admin1Code == stateCode {
+				citiesInState = append(citiesInState, city)
 			}
 		}
 	}
 
+	sort.Slice(citiesInState, func(i, j int) bool {
+		return *citiesInState[i].Population > *citiesInState[j].Population
+	})
+
+	limit := 50
+	if len(citiesInState) < limit {
+		limit = len(citiesInState)
+	}
+
+	for _, city := range citiesInState[:limit] {
+		cities = append(cities, Area{
+			AreaName:   CDATA{city.Name},
+			AreaCode:   CDATA{areaCode},
+			IsNextArea: CDATA{0},
+			Display:    CDATA{1},
+			Kanji1:     CDATA{stateName},
+			Kanji2:     CDATA{city.Name},
+			Kanji3:     CDATA{""},
+			Kanji4:     CDATA{""},
+		})
+	}
 	return cities
 }
 
