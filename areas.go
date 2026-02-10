@@ -125,7 +125,7 @@ func GetCitiesByStateCode(stateCode, areaCode string) []Area {
 
 	for _, city := range geonameCities {
 		if city.CountryCode == "CA" || city.CountryCode == "US" {
-			if city.Admin1Code == stateCode && *city.Population > 50000 {
+			if (city.Admin1Code == stateCode && *city.Population > 50000) || (city.Admin1Code == "WV" && *city.Population > 30000) {
 				cities = append(cities, Area{
 					AreaName:   CDATA{city.Name},
 					AreaCode:   CDATA{areaCode},
