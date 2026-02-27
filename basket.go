@@ -162,7 +162,7 @@ func basketAdd(r *Response) {
 	err = row.Scan(&lastBasket, &_authKey)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = errors.New("Follow wiilink.ca/guide/accounts and enable Domino's ordering.\nError Code: ")
+			err = dominos.NotLinkedError
 		}
 		r.ReportError(err)
 		return
@@ -200,7 +200,7 @@ func basketList(r *Response) {
 	err := row.Scan(&basketStr, nil)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			err = errors.New("Follow wiilink.ca/guide/accounts and enable Domino's ordering.\nError Code: ")
+			err = dominos.NotLinkedError
 		}
 		r.ReportError(err)
 		return
