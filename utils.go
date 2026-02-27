@@ -10,6 +10,7 @@ import (
 	"github.com/WiiLink24/nwc24"
 	"github.com/getsentry/sentry-go"
 	"github.com/logrusorgru/aurora/v4"
+	"golang.org/x/exp/slices"
 	"log"
 	"net/http"
 	"os"
@@ -200,15 +201,17 @@ func (r *Response) ReportError(err error) {
 		_ = os.WriteFile(fmt.Sprintf("errors/%s_%s.json", r.request.URL.Path, r.request.Header.Get("X-WiiNo")), r.dominos.GetResponse(), 0664)
 	}
 
-	sentry.WithScope(func(s *sentry.Scope) {
-		s.SetTag("Wii ID", r.GetHollywoodId())
-		sentry.CaptureException(err)
-	})
+	if !slices.Contains(dominos.NoSentryErrors, err) {
+		sentry.WithScope(func(s *sentry.Scope) {
+			s.SetTag("Wii ID", r.GetHollywoodId())
+			sentry.CaptureException(err)
+		})
 
-	log.Printf("An error has occurred: %s", aurora.Red(err.Error()))
+		log.Printf("An error has occurred: %s", aurora.Red(err.Error()))
 
-	errorString := fmt.Sprintf("%s\nWii ID: %s\nWii Number: %s", err.Error(), r.GetHollywoodId(), r.request.Header.Get("X-WiiNo"))
-	PostDiscordWebhook("An error has occurred in Demae Domino's!", errorString, config.ErrorWebhook, 16711711)
+		errorString := fmt.Sprintf("%s\nWii ID: %s\nWii Number: %s", err.Error(), r.GetHollywoodId(), r.request.Header.Get("X-WiiNo"))
+		PostDiscordWebhook("An error has occurred in Demae Domino's!", errorString, config.ErrorWebhook, 16711711)
+	}
 
 	// With the new patches I created, we can now send the error to the channel.
 	r.AddKVNode("error", err.Error())

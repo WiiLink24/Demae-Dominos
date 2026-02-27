@@ -6,9 +6,12 @@ import (
 )
 
 var (
+	NotLinkedError  = errors.New("Follow wiilink.ca/guide/accounts and enable Domino's ordering.\nError Code: ")
 	InvalidCountry  = errors.New("Your Wii's country is not supported (US and Canada only).\nError Code: ")
 	GenericError    = errors.New("An unknown error has occurred. Please contact WiiLink support.\nError Code: ")
 	NoDeliveryHours = errors.New("No delivery hours are available.\nError Code: ")
+
+	NoSentryErrors = []error{NotLinkedError, InvalidCountry}
 )
 
 func MakeError(err map[string]any) error {
