@@ -7,14 +7,15 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/WiiLink24/nwc24"
-	"github.com/getsentry/sentry-go"
-	"github.com/logrusorgru/aurora/v4"
-	"golang.org/x/exp/slices"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/WiiLink24/nwc24"
+	"github.com/getsentry/sentry-go"
+	"github.com/logrusorgru/aurora/v4"
+	"golang.org/x/exp/slices"
 )
 
 func NewResponse(r *http.Request, w *http.ResponseWriter, xmlType XMLType) *Response {
@@ -120,7 +121,7 @@ func (r *Response) toXML() (string, error) {
 		}
 
 		// Now the version and API tags
-		version, apiStatus := GenerateVersionAndAPIStatus()
+		version, apiStatus := r.GenerateVersionAndAPIStatus()
 		temp, err = xml.MarshalIndent(version, "", "  ")
 		if err != nil {
 			return "", err
@@ -135,7 +136,7 @@ func (r *Response) toXML() (string, error) {
 
 		contents += string(temp)
 	} else {
-		version, apiStatus := GenerateVersionAndAPIStatus()
+		version, apiStatus := r.GenerateVersionAndAPIStatus()
 		r.AddCustomType(version)
 		r.AddCustomType(apiStatus)
 		temp, err := xml.MarshalIndent(r.ResponseFields, "", "  ")
@@ -149,7 +150,7 @@ func (r *Response) toXML() (string, error) {
 	return contents, nil
 }
 
-func GenerateVersionAndAPIStatus() (*KVField, *KVFieldWChildren) {
+func (r *Response) GenerateVersionAndAPIStatus() (*KVField, *KVFieldWChildren) {
 	version := KVField{
 		XMLName: xml.Name{Local: "version"},
 		Value:   "1",
@@ -160,7 +161,7 @@ func GenerateVersionAndAPIStatus() (*KVField, *KVFieldWChildren) {
 		Value: []any{
 			KVField{
 				XMLName: xml.Name{Local: "code"},
-				Value:   "0",
+				Value:   r.errorCode,
 			},
 		},
 	}
