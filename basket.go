@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -378,6 +379,7 @@ func orderDone(r *Response) {
 	row := pool.QueryRow(context.Background(), QueryUserForOrder, r.GetHollywoodId())
 	err := row.Scan(&basketStr, &price, &orderId)
 	if err != nil {
+		r.errorCode = http.StatusInternalServerError
 		r.ReportError(err)
 		return
 	}
@@ -385,18 +387,21 @@ func orderDone(r *Response) {
 	var basket []map[string]any
 	err = json.Unmarshal([]byte(basketStr), &basket)
 	if err != nil {
+		r.errorCode = http.StatusInternalServerError
 		r.ReportError(err)
 		return
 	}
 
 	r.dominos, err = dominos.NewDominos(r.request)
 	if err != nil {
+		r.errorCode = http.StatusInternalServerError
 		r.ReportError(err)
 		return
 	}
 
 	user, err := r.dominos.AddressLookup(r.request.PostForm.Get("member[PostNo]"), r.request.PostForm.Get("member[Address5]"))
 	if err != nil {
+		r.errorCode = http.StatusInternalServerError
 		r.ReportError(err)
 		return
 	}
@@ -425,6 +430,7 @@ func orderDone(r *Response) {
 			config.OrderWebhook,
 			65311,
 		)
+		r.errorCode = http.StatusInternalServerError
 		r.ReportError(orderErr)
 		return
 	}
