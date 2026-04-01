@@ -1,6 +1,6 @@
 module DemaeDominos
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/WiiLink24/nwc24 v0.0.0-20251223184323-cc2586e6b86d
@@ -11,8 +11,8 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/remizovm/geonames v0.1.0
 	golang.org/x/exp v0.0.0-20260112195511-716be5621a96
-	golang.org/x/image v0.35.0
-	golang.org/x/text v0.33.0
+	golang.org/x/image v0.38.0
+	golang.org/x/text v0.35.0
 )
 
 require (
