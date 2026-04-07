@@ -5,7 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/getsentry/sentry-go"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/remizovm/geonames"
 	"github.com/remizovm/geonames/models"
 	"log"
@@ -45,9 +45,7 @@ func main() {
 
 	// Initialize database
 	dbString := fmt.Sprintf("postgres://%s:%s@%s/%s", config.SQLUser, config.SQLPass, config.SQLAddress, config.SQLDB)
-	dbConf, err := pgxpool.ParseConfig(dbString)
-	checkError(err)
-	pool, err = pgxpool.ConnectConfig(context.Background(), dbConf)
+	pool, err = pgxpool.New(context.Background(), dbString)
 	checkError(err)
 
 	// Ensure this Postgresql connection is valid.
