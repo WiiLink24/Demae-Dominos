@@ -6,7 +6,7 @@ require (
 	github.com/WiiLink24/nwc24 v0.0.0-20251223184323-cc2586e6b86d
 	github.com/getsentry/sentry-go v0.44.1
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/jackc/pgx/v5 v5.9.1
+	github.com/jackc/pgx/v5 v5.9.2
 	github.com/logrusorgru/aurora/v4 v4.0.0
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/remizovm/geonames v0.1.0
